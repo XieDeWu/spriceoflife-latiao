@@ -26,8 +26,8 @@ public class Config {
             .defineInRange("historyLengthRecent", 16, 0, 2048);
 
     public static final ModConfigSpec.ConfigValue<String> LOSS = BUILDER
-            .comment("默认流失公式,取决于饥饿程度、近期饮食,饮食清淡程度 || 相关变量 ")
-            .define("loss", "0.002*Math.pow(???HUNGER_LEVEL+SATURATION_LEVEL,???)*Math.log(???HUNGER_RECENT???)");
+            .comment("默认流失公式,取决于饥饿程度、近期营养水平、近期饮食 || 相关变量 ")
+            .define("loss", "0.01*Math.pow(2.0,(HUNGER_LEVEL-20.0)/10.0)*Math.pow(0.5,SATURATION_RECENT/Math.max(HUNGER_RECENT,1.0)-1.0)*Math.pow(32.0,(HUNGER_RECENT+SATURATION_RECENT-180.0)/640.0)");
 
     public static final ModConfigSpec.ConfigValue<String> HUNGER = BUILDER
         .comment("默认饱食度公式,取决于近期饮食、长期饮食、饥饿程度 || 相关变量 该食物饱食度 HUNGER 该食物近期食用次数 EATEN_RECENT 玩家饱食度 HUNGER_LEVEL 该食物长期食用次数 EATEN_LONG")
