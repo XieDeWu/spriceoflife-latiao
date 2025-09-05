@@ -2,7 +2,7 @@
   "required": true,
   "package": "com.example.examplemod.mixin",
   "compatibilityLevel": "JAVA_21",
-  "mixins": ["FoodDataMixin","PlayerMixin","LivingEntityMixin","EntityMixin","IItemExtensionMixin"],
+  "mixins": ["IItemExtensionMixin","FoodDataMixin"],
   "injectors": {
     "defaultRequire": 1
   },
