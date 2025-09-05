@@ -17,13 +17,17 @@ import net.neoforged.neoforge.common.ModConfigSpec;
 public class Config {
     private static final ModConfigSpec.Builder BUILDER = new ModConfigSpec.Builder();
 
+    public static final ModConfigSpec.ConfigValue<Boolean> EANBLE_CHANGE = BUILDER
+            .comment("启用生活调味料饮食调整，这将根据长短期的食用次数、营养水平、饮食水平、饥饿程度、饱和程度动态影响食物数据，已经过多次平衡性调整以适配农夫乐事前中后期玩家")
+            .define("enable_change",true);
+
     public static final ModConfigSpec.ConfigValue<Integer> HISTORY_LENGTH_LONG = BUILDER
             .comment("长期食用历史长度,用于统计长期饮食数据")
-            .defineInRange("historyLengthLong", 512, 0, 2048);
+            .defineInRange("historyLengthLong", 512, 0, 4096);
 
     public static final ModConfigSpec.ConfigValue<Integer> HISTORY_LENGTH_SHORT = BUILDER
             .comment("短期食用历史长度,用于统计短期饮食数据")
-            .defineInRange("historyLengthSHORT", 16, 0, 2048);
+            .defineInRange("historyLengthShort", 16, 0, 1024);
 
     public static final ModConfigSpec.ConfigValue<String> LOSS = BUILDER
             .comment("默认自然流失公式，影响顺序：饥饿程度、短期营养水平、短期饮食水平、饱和程度 ||| 相关变量 玩家饱食度 HUNGER_LEVEL 短期总饱和度 SATURATION_SHORT 短期总饱食度 HUNGER_SHORT 玩家饱和度 SATURATION")
