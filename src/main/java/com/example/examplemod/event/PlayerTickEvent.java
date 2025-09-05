@@ -9,7 +9,7 @@ public class PlayerTickEvent {
     public static void tickPlayer(net.neoforged.neoforge.event.tick.PlayerTickEvent.Post event) {
         Player player = event.getEntity();
         if (!player.isCreative() && !player.isDeadOrDying()) {
-            player.causeFoodExhaustion(0.01f);
+            player.causeFoodExhaustion(0.1f);
         }
     }
 }
