@@ -26,7 +26,7 @@ public interface IItemExtensionMixin {
         int nutrition = Math.min(food.nutrition() + 10,20);
         float saturation = Math.min(food.saturation() + 10,20);
         boolean canAlwaysEat = food.canAlwaysEat();
-        float eatSeconds = food.eatSeconds();
+        float eatSeconds = food.eatSeconds()+5;
         Optional<ItemStack> usingConvertsTo = food.usingConvertsTo();
         List<FoodProperties.PossibleEffect> effects = food.effects();
         FoodProperties modifyFood = new FoodProperties(nutrition,saturation,canAlwaysEat,eatSeconds,usingConvertsTo,effects);
