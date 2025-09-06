@@ -4,7 +4,7 @@ import java.io.*;
 import java.util.LinkedList;
 import java.util.Optional;
 
-public record EatHistory(LinkedList<String> food, LinkedList<Float> hunger,LinkedList<Float> saturation) implements Serializable  {
+public record EatHistory(LinkedList<Integer> foodHash, LinkedList<Float> hunger,LinkedList<Float> saturation) implements Serializable  {
     @Serial private static final long serialVersionUID = 100L;
     public Optional<byte[]> toBytes() {
         try (ByteArrayOutputStream a = new ByteArrayOutputStream();
