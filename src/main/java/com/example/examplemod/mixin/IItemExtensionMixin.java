@@ -2,6 +2,7 @@ package com.example.examplemod.mixin;
 
 import net.minecraft.core.component.DataComponents;
 import net.minecraft.world.entity.LivingEntity;
+import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.food.FoodProperties;
 import net.minecraft.world.item.ItemStack;
 import net.neoforged.neoforge.common.extensions.IItemExtension;
@@ -22,11 +23,13 @@ public interface IItemExtensionMixin {
     @Nullable // read javadoc to find a potential problem
     default FoodProperties getFoodProperties(ItemStack stack, @Nullable LivingEntity entity) {
         var food = stack.get(DataComponents.FOOD);
-        if(food == null) return food;
+        if(food == null) return null;
+        if(!(entity instanceof Player)) return food;
+        var player = (Player)entity;
         int nutrition = Math.min(food.nutrition() + 10,20);
         float saturation = Math.min(food.saturation() + 10,20);
         boolean canAlwaysEat = food.canAlwaysEat();
-        float eatSeconds = food.eatSeconds()+5;
+        float eatSeconds = food.eatSeconds()+1;
         Optional<ItemStack> usingConvertsTo = food.usingConvertsTo();
         List<FoodProperties.PossibleEffect> effects = food.effects();
         FoodProperties modifyFood = new FoodProperties(nutrition,saturation,canAlwaysEat,eatSeconds,usingConvertsTo,effects);

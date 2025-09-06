@@ -46,8 +46,8 @@ public class Config {
             .define("enable_asitia",true);
 
     public static final ModConfigSpec.ConfigValue<String> EAT_SECONDS = BUILDER
-            .comment("默认食用时间公式,影响顺序：原食用时间、饥饿程度、原食物饱食度、饮食调整 ||| 相关变量 原食用时间 ORG_EAT_SECONDS 玩家饱食度 HUNGER_LEVEL 原食物饱食度 ORG_HUNGER 现食物饱食度 HUNGER 原食物饱和度 ORG_SATURATION 现食物饱和度 SATURATION")
-            .define("EAT_SECONDS","ORG_EAT_SECONDS*(49.0/30.0*Math.pow(10.0/7.0,HUNGER_LEVEL/10.0)−4.0/3.0)");
+            .comment("默认食用时间公式,影响顺序：原食用时间、饥饿程度、原食物饱食度、饮食调整 ||| 相关变量 原食用时间 EAT_SECONDS_ORG 玩家饱食度 HUNGER_LEVEL 原食物饱食度 HUNGER_ORG 现食物饱食度 HUNGER 原食物饱和度 SATURATION_ORG 现食物饱和度 SATURATION")
+            .define("EAT_SECONDS","EAT_SECONDS_ORG*(49.0/30.0*Math.pow(10.0/7.0,HUNGER_LEVEL/10.0)−4.0/3.0)");
 
 
     // a list of strings that are treated as resource locations for items
