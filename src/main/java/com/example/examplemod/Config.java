@@ -1,15 +1,9 @@
 package com.example.examplemod;
 
 import java.util.List;
-import java.util.Set;
-import java.util.stream.Collectors;
 
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.resources.ResourceLocation;
-import net.minecraft.world.item.Item;
-import net.neoforged.bus.api.SubscribeEvent;
-import net.neoforged.fml.common.EventBusSubscriber;
-import net.neoforged.fml.event.config.ModConfigEvent;
 import net.neoforged.neoforge.common.ModConfigSpec;
 
 // An example config class. This is not required, but it's a good idea to have one to keep your config organized.
@@ -35,11 +29,11 @@ public class Config {
 
     public static final ModConfigSpec.ConfigValue<String> HUNGER = BUILDER
         .comment("默认饱食度公式，影响顺序：短期饮食、饥饿程度、长期饮食 ||| 相关变量 现食物饱食度 HUNGER 现食物短期食用次数 EATEN_SHORT 玩家饱食度 HUNGER_LEVEL 现食物长期食用次数 EATEN_LONG")
-        .define("hunger", "HUNGER*0.4*Math.max(Math.pow(0.8,EATEN_SHORT),Math.max(1-HUNGER_LEVEL/12.0,0.0))+HUNGER*0.4*Math.max(1-EATEN_LONG/64.0,0.0)+HUNGER*0.2");
+        .define("hunger", "HUNGER*0.4*max((0.8^EATEN_SHORT),max(1 - HUNGER_LEVEL/12.0,0.0))+HUNGER*0.4*max(1 - EATEN_LONG/64.0,0.0)+HUNGER*0.2");
 
     public static final ModConfigSpec.ConfigValue<String> SATURATION = BUILDER
         .comment("默认饱和度公式,影响顺序：短期饮食、长期饮食、饥饿程度 ||| 相关变量 现食物饱和度 SATURATION 现食物短期食用次数 EATEN_SHORT 现食物长期食用次数 EATEN_LONG 玩家饱食度 HUNGER_LEVEL")
-        .define("saturation", "SATURATION*Math.pow(0.9,EATEN_SHORT)*Math.max(1.0-EATEN_LONG/64.0,0.0)+(HUNGER*0.2+SATURATION*0.2)*Math.max(1.0-HUNGER_LEVEL/12.0,0.0)");
+        .define("saturation", "SATURATION*(0.9^EATEN_SHORT)*max(1.0-EATEN_LONG/64.0,0.0)+(HUNGER*0.2+SATURATION*0.2)*max(1.0-HUNGER_LEVEL/12.0,0.0)");
 
     public static final ModConfigSpec.ConfigValue<Boolean> EANBLE_ASITIA = BUILDER
             .comment("启用生活调味料厌食调整，这将根据食物的饮食数据调整食用时间")
@@ -47,7 +41,7 @@ public class Config {
 
     public static final ModConfigSpec.ConfigValue<String> EAT_SECONDS = BUILDER
             .comment("默认食用时间公式,影响顺序：原食用时间、饥饿程度、原食物饱食度、饮食调整 ||| 相关变量 原食用时间 EAT_SECONDS_ORG 玩家饱食度 HUNGER_LEVEL 原食物饱食度 HUNGER_ORG 现食物饱食度 HUNGER 原食物饱和度 SATURATION_ORG 现食物饱和度 SATURATION")
-            .define("EAT_SECONDS","EAT_SECONDS_ORG*(49.0/30.0*Math.pow(10.0/7.0,HUNGER_LEVEL/10.0)−4.0/3.0)");
+            .define("EAT_SECONDS","EAT_SECONDS_ORG*(49.0/30.0*(10.0/7.0)^(HUNGER_LEVEL/10.0)-(4.0/3.0))");
 
 
     // a list of strings that are treated as resource locations for items

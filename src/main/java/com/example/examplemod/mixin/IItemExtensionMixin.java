@@ -2,6 +2,7 @@ package com.example.examplemod.mixin;
 
 import com.example.examplemod.Config;
 import com.example.examplemod.util.EatFormulaContext;
+import com.example.examplemod.util.EatHistory;
 import net.minecraft.core.component.DataComponents;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.player.Player;
@@ -30,16 +31,15 @@ public interface IItemExtensionMixin {
     default FoodProperties getFoodProperties(ItemStack stack, @Nullable LivingEntity entity) {
         var food = stack.get(DataComponents.FOOD);
         if(food == null) return null;
-        if(!(entity instanceof Player player)) return food;
+        if(entity instanceof Player player) EatHistory.recentPlayer = Optional.of(player);
         AtomicInteger nutrition = new AtomicInteger(food.nutrition());
         AtomicReference<Float> saturation = new AtomicReference<>(food.saturation());
         AtomicReference<Float> eatSeconds = new AtomicReference<>(food.eatSeconds());
-        EatFormulaContext.from(player, stack)
-                .ifPresent(x->{
-                    nutrition.set(new BigDecimal(x.hunger()).setScale(0, RoundingMode.HALF_EVEN).intValue());
-                    saturation.set(x.saturation());
-                    eatSeconds.set(x.eat_seconds());
-                });
+        EatHistory.recentPlayer.flatMap(rp -> EatFormulaContext.from(rp, stack)).ifPresent(x -> {
+            nutrition.set(new BigDecimal(x.hunger()).setScale(0, RoundingMode.HALF_EVEN).intValue());
+            saturation.set(x.saturation());
+            eatSeconds.set(x.eat_seconds());
+        });
         boolean canAlwaysEat = food.canAlwaysEat();
         Optional<ItemStack> usingConvertsTo = food.usingConvertsTo();
         List<FoodProperties.PossibleEffect> effects = food.effects();

@@ -8,6 +8,7 @@ import net.minecraft.world.food.FoodProperties;
 import net.minecraft.world.item.ItemStack;
 import net.objecthunter.exp4j.Expression;
 import net.objecthunter.exp4j.ExpressionBuilder;
+import net.objecthunter.exp4j.function.Function;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.List;
@@ -16,11 +17,6 @@ import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.IntStream;
 
 public record EatFormulaContext(
-//        Config config,
-//        Player player,
-//        Item item,
-//        EatHistory EatHistory,
-//        FoodProperties foodProperties,
         @NotNull Float hunger_level,
         @NotNull Float saturation_level,
         @NotNull Float hunger_org,
@@ -77,15 +73,75 @@ public record EatFormulaContext(
                     saturation_long.updateAndGet(v -> v + tuple.saturation);
                     eaten_long.updateAndGet(v -> v + 1f);
                 });
-        Expression e = new ExpressionBuilder("3 * sin(y) - 2 / (x - 2)")
-                .variables("x", "y")
-                .build()
-                .setVariable("x", 2.3)
-                .setVariable("y", 3.14);
-        double result = e.evaluate();
-//        Float hunger
-//        Float saturation
-//        Float eat_seconds
-        return Optional.empty();
+        try {
+            Expression e_hunger = new ExpressionBuilder(Config.HUNGER.get())
+                    .variables("HUNGER", "EATEN_SHORT","HUNGER_LEVEL","EATEN_LONG")
+                    .function(new Function("max", 2) {
+                        @Override
+                        public double apply(double... args) {
+                            return Math.max(args[0], args[1]);
+                        }
+                    })
+                    .build()
+                    .setVariable("HUNGER", hunger_org)
+                    .setVariable("EATEN_SHORT", eaten_short.get())
+                    .setVariable("HUNGER_LEVEL", hunger_level)
+                    .setVariable("EATEN_LONG", eaten_long.get());
+            Float hunger = (float) e_hunger.evaluate();
+            Expression e_saturation = new ExpressionBuilder(Config.SATURATION.get())
+                    .variables("HUNGER","SATURATION","HUNGER_LEVEL", "EATEN_SHORT","EATEN_LONG")
+                    .function(new Function("max", 2) {
+                        @Override
+                        public double apply(double... args) {
+                            return Math.max(args[0], args[1]);
+                        }
+                    })
+                    .build()
+                    .setVariable("HUNGER", hunger_org)
+                    .setVariable("SATURATION",saturation_org)
+                    .setVariable("HUNGER_LEVEL", hunger_level)
+                    .setVariable("EATEN_SHORT", eaten_short.get())
+                    .setVariable("EATEN_LONG", eaten_long.get());
+            Float saturation = (float) e_saturation.evaluate();
+            Expression e_eat_seconds = new ExpressionBuilder(Config.EAT_SECONDS.get())
+                    .variables("HUNGER",
+                            "SATURATION",
+                            "HUNGER_LEVEL",
+                            "EATEN_SHORT",
+                            "EATEN_LONG",
+                            "EAT_SECONDS_ORG")
+                    .function(new Function("max", 2) {
+                        @Override
+                        public double apply(double... args) {
+                            return Math.max(args[0], args[1]);
+                        }
+                    })
+                    .build()
+                    .setVariable("HUNGER", hunger_org)
+                    .setVariable("SATURATION",saturation_org)
+                    .setVariable("HUNGER_LEVEL", hunger_level)
+                    .setVariable("EATEN_SHORT", eaten_short.get())
+                    .setVariable("EATEN_LONG", eaten_long.get())
+                    .setVariable("EAT_SECONDS_ORG",eat_seconds_org);
+            Float eat_seconds = (float) e_eat_seconds.evaluate();
+            return Optional.of(new EatFormulaContext(
+                    hunger_level,
+                    saturation_level,
+                    hunger_org,
+                    saturation_org,
+                    eat_seconds_org,
+                    hunger_short.get(),
+                    hunger_long.get(),
+                    saturation_short.get(),
+                    saturation_long.get(),
+                    eaten_short.get(),
+                    eaten_long.get(),
+                    hunger,
+                    saturation,
+                    eat_seconds
+            ));
+        } catch (Exception e) {
+            return Optional.empty();
+        }
     }
 }
