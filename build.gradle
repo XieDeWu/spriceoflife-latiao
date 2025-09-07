@@ -112,9 +112,18 @@ sourceSets.main.resources { srcDir 'src/generated/resources' }
 configurations {
     runtimeClasspath.extendsFrom localRuntime
 }
-
+jarJar {
+//    rangedRelocate 'net.objecthunter.exp4j', "${mod_id}.lib.exp4j"
+}
 dependencies {
     implementation "net.neoforged:neoforge:${neo_version}"
+    jarJar(implementation("net.objecthunter:exp4j:0.4.8")) {
+        version {
+            strictly '[0.4.8]'
+            prefer '0.4.8'
+        }
+    }
+    additionalRuntimeClasspath "net.objecthunter:exp4j:0.4.8"
 
     compileOnly "squeek.appleskin:appleskin-neoforge:mc1.21-3.0.7"
     runtimeOnly "squeek.appleskin:appleskin-neoforge:mc1.21-3.0.7"
