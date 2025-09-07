@@ -1,5 +1,7 @@
 package com.example.examplemod.mixin;
 
+import com.example.examplemod.Config;
+import com.example.examplemod.util.EatFormulaContext;
 import net.minecraft.core.component.DataComponents;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.player.Player;
@@ -10,8 +12,12 @@ import org.jetbrains.annotations.Nullable;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Overwrite;
 
+import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.util.List;
 import java.util.Optional;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicReference;
 
 @Mixin(IItemExtension.class)
 public interface IItemExtensionMixin {
@@ -24,15 +30,19 @@ public interface IItemExtensionMixin {
     default FoodProperties getFoodProperties(ItemStack stack, @Nullable LivingEntity entity) {
         var food = stack.get(DataComponents.FOOD);
         if(food == null) return null;
-        if(!(entity instanceof Player)) return food;
-        var player = (Player)entity;
-        int nutrition = Math.min(food.nutrition() + 10,20);
-        float saturation = Math.min(food.saturation() + 10,20);
+        if(!(entity instanceof Player player)) return food;
+        AtomicInteger nutrition = new AtomicInteger(food.nutrition());
+        AtomicReference<Float> saturation = new AtomicReference<>(food.saturation());
+        AtomicReference<Float> eatSeconds = new AtomicReference<>(food.eatSeconds());
+        EatFormulaContext.from(Config.SPEC, player, stack.getItem())
+                .ifPresent(x->{
+                    nutrition.set(new BigDecimal(x.hunger()).setScale(0, RoundingMode.HALF_EVEN).intValue());
+                    saturation.set(x.saturation());
+                    eatSeconds.set(x.eat_seconds());
+                });
         boolean canAlwaysEat = food.canAlwaysEat();
-        float eatSeconds = food.eatSeconds()+1;
         Optional<ItemStack> usingConvertsTo = food.usingConvertsTo();
         List<FoodProperties.PossibleEffect> effects = food.effects();
-        FoodProperties modifyFood = new FoodProperties(nutrition,saturation,canAlwaysEat,eatSeconds,usingConvertsTo,effects);
-        return modifyFood;
+        return new FoodProperties(nutrition.get(), saturation.get(),canAlwaysEat, eatSeconds.get(),usingConvertsTo,effects);
     }
 }
