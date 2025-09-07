@@ -1,5 +1,8 @@
 package com.example.examplemod.util;
 
+import net.minecraft.world.item.Item;
+import org.jetbrains.annotations.NotNull;
+
 import java.io.*;
 import java.util.LinkedList;
 import java.util.Optional;
@@ -27,5 +30,7 @@ public record EatHistory(LinkedList<Integer> foodHash, LinkedList<Float> hunger,
         }
         return Optional.empty();
     }
-
+    public static int getFoodHash(@NotNull Item item){
+        return item.toString().replace(" ", "").hashCode();
+    }
 }

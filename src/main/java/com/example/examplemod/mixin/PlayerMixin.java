@@ -1,5 +1,6 @@
 package com.example.examplemod.mixin;
 
+import com.example.examplemod.util.EatHistory;
 import com.example.examplemod.util.EatHistoryAcessor;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.food.FoodData;
@@ -19,6 +20,6 @@ public abstract class PlayerMixin {
     public void injected(Level pLevel, ItemStack pFood, FoodProperties pFoodProperties, CallbackInfoReturnable info) {
         var foodData = this.getFoodData();
         if (!(foodData instanceof EatHistoryAcessor acessor)) return;
-        acessor.addEatHistory(pFood.getItem().toString().replace(" ", "").hashCode(),pFoodProperties.nutrition()*1.0f,pFoodProperties.saturation());
+        acessor.addEatHistory(EatHistory.getFoodHash(pFood.getItem()),pFoodProperties.nutrition()*1.0f,pFoodProperties.saturation());
     }
 }
