@@ -24,24 +24,24 @@ public class Config {
             .defineInRange("historyLengthShort", 16, 0, 1024);
 
     public static final ModConfigSpec.ConfigValue<String> LOSS = BUILDER
-            .comment("默认自然疲劳公式，影响顺序：饥饿程度、短期营养、短期摄入、过饱和惩罚 ||| 相关变量 玩家饱食度 HUNGER_LEVEL 短期总饱和度 SATURATION_SHORT 短期总饱食度 HUNGER_SHORT 玩家饱和度 SATURATION")
-            .define("loss", "0.005*(2^(HUNGER_LEVEL/10-1))" +
+            .comment("默认自然饥饿公式，影响顺序：饥饿程度、短期营养、短期摄入、过饱和惩罚 ||| 相关变量 玩家饱食度 HUNGER_LEVEL 短期总饱和度 SATURATION_SHORT 短期总饱食度 HUNGER_SHORT 玩家饱和度 SATURATION")
+            .define("LOSS", "0.005*(2^(HUNGER_LEVEL/10-1))" +
                     "*(0.5^(SUM_SATURATION_SHORT/max(SUM_HUNGER_SHORT,1)-1))" +
                     "*(2^((SUM_SATURATION_SHORT+SUM_HUNGER_SHORT)/128 -1))" +
                     "*(1+2^(SATURATION_LEVEL/4-4)-0.0625)");
 
     public static final ModConfigSpec.ConfigValue<String> HUNGER = BUILDER
         .comment("默认饱食度公式，影响顺序：短期饮食、饥饿程度、长期饮食 ||| 相关变量 现食物饱食度 HUNGER 现食物短期食用次数 EATEN_SHORT 玩家饱食度 HUNGER_LEVEL 现食物长期食用次数 EATEN_LONG")
-        .define("hunger", "HUNGER*0.4*max((0.8^EATEN_SHORT),max(1-HUNGER_LEVEL/12,0))" +
-                "+HUNGER*0.4*max(1-EATEN_LONG/64,0)" +
-                "+HUNGER*0.2");
+        .define("HUNGER", "HUNGER_ORG*0.4*max((0.8^EATEN_SHORT),max(1-HUNGER_LEVEL/12,0))" +
+                "+HUNGER_ORG*0.4*max(1-EATEN_LONG/64,0)" +
+                "+HUNGER_ORG*0.2");
 
     public static final ModConfigSpec.ConfigValue<String> SATURATION = BUILDER
         .comment("默认饱和度公式,影响顺序：短期饮食、长期饮食、饥饿程度 ||| 相关变量 现食物饱和度 SATURATION 现食物短期食用次数 EATEN_SHORT 现食物长期食用次数 EATEN_LONG 玩家饱食度 HUNGER_LEVEL")
-        .define("saturation", "SATURATION" +
+        .define("SATURATION", "SATURATION_ORG" +
                 "*(0.9^EATEN_SHORT)" +
                 "*max(1-EATEN_LONG/64,0)" +
-                "+(HUNGER*0.2+SATURATION*0.2)" +
+                "+(HUNGER_ORG*0.2+SATURATION_ORG*0.2)" +
                 "*max(1-HUNGER_LEVEL/12,0)");
 
     public static final ModConfigSpec.ConfigValue<String> EAT_SECONDS = BUILDER
