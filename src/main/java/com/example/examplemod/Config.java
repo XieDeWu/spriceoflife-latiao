@@ -47,7 +47,7 @@ public class Config {
     public static final ModConfigSpec.ConfigValue<String> EAT_SECONDS = BUILDER
             .comment("默认食用时间公式,影响顺序：原食用时间、原食物饱食度与饱食偏移、饥饿程度、食物效果数||| 相关变量 原食用时间 EAT_SECONDS_ORG 玩家饱食度 HUNGER_LEVEL 原食物饱食度 HUNGER_ORG 现食物饱食度 HUNGER 食物BUFF数 BUFF 食物DEBUFF数 DEBUFF")
             .define("EAT_SECONDS","EAT_SECONDS_ORG" +
-                    "*(0.7+0.05*(2*HUNGER_ORG-HUNGER))" +
+                    "*(0.5+0.1*(2*HUNGER_ORG-HUNGER))" +
                     "*(49/30*(10/7)^(HUNGER_LEVEL/10)-4/3)" +
                     "*(1/(1+BUFF))*(2-1/(1+DEBUFF))");
 
