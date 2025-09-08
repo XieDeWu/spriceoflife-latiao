@@ -35,7 +35,7 @@ public interface IItemExtensionMixin {
         AtomicInteger nutrition = new AtomicInteger(food.nutrition());
         AtomicReference<Float> saturation = new AtomicReference<>(food.saturation());
         AtomicReference<Float> eatSeconds = new AtomicReference<>(food.eatSeconds());
-        EatHistory.recentPlayer.flatMap(rp -> EatFormulaContext.from(rp, stack)).ifPresent(x -> {
+        EatHistory.recentPlayer.flatMap(rp -> EatFormulaContext.from(rp, Optional.of(stack))).ifPresent(x -> {
             nutrition.set(new BigDecimal(x.hunger()).setScale(0, RoundingMode.HALF_EVEN).intValue());
             saturation.set(x.saturation());
             eatSeconds.set(x.eat_seconds());
