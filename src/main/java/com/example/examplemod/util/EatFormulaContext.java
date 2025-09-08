@@ -135,8 +135,11 @@ public record EatFormulaContext(
             Float saturation = (float) e_saturation.evaluate();
             Expression e_eat_seconds = new ExpressionBuilder(Config.EAT_SECONDS.get())
                     .variables("HUNGER",
+                            "HUNGER_ORG",
                             "SATURATION",
+                            "SATURATION_ORG",
                             "HUNGER_LEVEL",
+                            "SATURATION_LEVEL",
                             "EATEN_SHORT",
                             "EATEN_LONG",
                             "EAT_SECONDS_ORG",
@@ -149,9 +152,12 @@ public record EatFormulaContext(
                         }
                     })
                     .build()
-                    .setVariable("HUNGER", hunger_org)
-                    .setVariable("SATURATION",saturation_org)
+                    .setVariable("HUNGER", hunger)
+                    .setVariable("HUNGER_ORG", hunger_org)
+                    .setVariable("SATURATION",saturation)
+                    .setVariable("SATURATION_ORG",saturation_org)
                     .setVariable("HUNGER_LEVEL", hunger_level)
+                    .setVariable("SATURATION_LEVEL", saturation_level)
                     .setVariable("EATEN_SHORT", eaten_short.get())
                     .setVariable("EATEN_LONG", eaten_long.get())
                     .setVariable("EAT_SECONDS_ORG",eat_seconds_org)
@@ -177,9 +183,9 @@ public record EatFormulaContext(
                     })
                     .build()
                     .setVariable("HUNGER_LEVEL", hunger_level)
-                    .setVariable("SATURATION_LEVEL", hunger_org)
-                    .setVariable("SUM_HUNGER_SHORT",saturation_org)
-                    .setVariable("SUM_SATURATION_SHORT",saturation_org);
+                    .setVariable("SATURATION_LEVEL", saturation_level)
+                    .setVariable("SUM_HUNGER_SHORT", sum_hunger_short.get())
+                    .setVariable("SUM_SATURATION_SHORT",sum_saturation_short.get());
             Float loss = (float) e_loss.evaluate();
             return Optional.of(new EatFormulaContext(
                     hunger_level,
