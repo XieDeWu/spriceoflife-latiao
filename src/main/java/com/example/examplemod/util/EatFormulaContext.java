@@ -2,6 +2,7 @@ package com.example.examplemod.util;
 
 import com.example.examplemod.Config;
 import net.minecraft.core.component.DataComponents;
+import net.minecraft.world.effect.MobEffectCategory;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.food.FoodData;
 import net.minecraft.world.food.FoodProperties;
@@ -22,6 +23,8 @@ public record EatFormulaContext(
         @NotNull Float hunger_org,
         @NotNull Float saturation_org,
         @NotNull Float eat_seconds_org,
+        @NotNull Float buff_count,
+        @NotNull Float debuff_count,
         @NotNull Float hunger_short,
         @NotNull Float hunger_long,
         @NotNull Float saturation_short,
@@ -53,6 +56,15 @@ public record EatFormulaContext(
         Float hunger_org = foodProperties.map(x->(float)x.nutrition()).orElse(0f);
         Float saturation_org = foodProperties.map(FoodProperties::saturation).orElse(0f);
         Float eat_seconds_org = foodProperties.map(FoodProperties::eatSeconds).orElse(0f);
+        AtomicReference<Float> buff = new AtomicReference<>(0f);
+        AtomicReference<Float> debuff = new AtomicReference<>(0f);
+        foodProperties.ifPresent(x->{
+            x.effects().forEach(y-> {
+                var category = y.effect().getEffect().value().getCategory();
+                if(category == MobEffectCategory.BENEFICIAL) buff.updateAndGet(v -> v + 1f);
+                if(category == MobEffectCategory.HARMFUL) debuff.updateAndGet(v -> v + 1f);
+            });
+        });
         AtomicReference<Float> hunger_short = new AtomicReference<>(0f);
         AtomicReference<Float> hunger_long = new AtomicReference<>(0f);
         AtomicReference<Float> saturation_short = new AtomicReference<>(0f);
@@ -127,7 +139,9 @@ public record EatFormulaContext(
                             "HUNGER_LEVEL",
                             "EATEN_SHORT",
                             "EATEN_LONG",
-                            "EAT_SECONDS_ORG")
+                            "EAT_SECONDS_ORG",
+                            "BUFF",
+                            "DEBUFF")
                     .function(new Function("max", 2) {
                         @Override
                         public double apply(double... args) {
@@ -140,7 +154,9 @@ public record EatFormulaContext(
                     .setVariable("HUNGER_LEVEL", hunger_level)
                     .setVariable("EATEN_SHORT", eaten_short.get())
                     .setVariable("EATEN_LONG", eaten_long.get())
-                    .setVariable("EAT_SECONDS_ORG",eat_seconds_org);
+                    .setVariable("EAT_SECONDS_ORG",eat_seconds_org)
+                    .setVariable("BUFF",buff.get())
+                    .setVariable("DEBUFF", debuff.get());
             Float eat_seconds = (float) e_eat_seconds.evaluate();
             Expression e_loss = new ExpressionBuilder(Config.LOSS.get())
                     .variables("HUNGER_LEVEL",
@@ -171,6 +187,8 @@ public record EatFormulaContext(
                     hunger_org,
                     saturation_org,
                     eat_seconds_org,
+                    buff.get(),
+                    debuff.get(),
                     hunger_short.get(),
                     hunger_long.get(),
                     saturation_short.get(),
