@@ -1,5 +1,6 @@
 package com.xdw.spiceoflife.latiao.event;
 
+import com.xdw.spiceoflife.latiao.Config;
 import com.xdw.spiceoflife.latiao.util.EatFormulaContext;
 import com.xdw.spiceoflife.latiao.util.EatHistoryAcessor;
 import net.minecraft.world.entity.player.Player;
@@ -13,6 +14,7 @@ public class PlayerEventHandle {
     public static void tickPlayer(net.neoforged.neoforge.event.tick.PlayerTickEvent.Post event) {
         Player player = event.getEntity();
         if(player.isCreative() || player.isDeadOrDying()) return;
+        if(!Config.EANBLE.get()) return;
         EatFormulaContext.from(player, Optional.empty()).ifPresent(x->player.causeFoodExhaustion(x.loss()));
     }
     @SubscribeEvent
