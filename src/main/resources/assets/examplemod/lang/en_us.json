@@ -1,13 +1,9 @@
 {
-  "itemGroup.examplemod": "Example Mod Tab",
-  "block.examplemod.example_block": "Example Block",
-  "item.examplemod.example_item": "Example Item",
-
-  "examplemod.configuration.title": "Example Mod Configs",
-  "examplemod.configuration.section.examplemod.common.toml": "Example Mod Configs",
-  "examplemod.configuration.section.examplemod.common.toml.title": "Example Mod Configs",
-  "examplemod.configuration.items": "Item List",
-  "examplemod.configuration.logDirtBlock": "Log Dirt Block",
-  "examplemod.configuration.magicNumberIntroduction": "Magic Number Text",
-  "examplemod.configuration.magicNumber": "Magic Number"
+  "spiceoflifelatiao.configuration.enable_change": "Enable_Change",
+  "spiceoflifelatiao.configuration.historyLengthLong": "HistoryLengthLong",
+  "spiceoflifelatiao.configuration.historyLengthShort": "HistoryLengthShort",
+  "spiceoflifelatiao.configuration.LOSS": "LOSS",
+  "spiceoflifelatiao.configuration.HUNGER": "HUNGER",
+  "spiceoflifelatiao.configuration.SATURATION": "SATURATION",
+  "spiceoflifelatiao.configuration.EAT_SECONDS": "EAT_SECONDS"
 }

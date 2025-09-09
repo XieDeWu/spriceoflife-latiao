@@ -1,0 +1,9 @@
+{
+  "spiceoflifelatiao.configuration.enable_change": "启用调整",
+  "spiceoflifelatiao.configuration.historyLengthLong": "长期食用历史长度",
+  "spiceoflifelatiao.configuration.historyLengthShort": "短期食用历史长度",
+  "spiceoflifelatiao.configuration.LOSS": "默认自然饥饿公式",
+  "spiceoflifelatiao.configuration.HUNGER": "默认饱食度公式",
+  "spiceoflifelatiao.configuration.SATURATION": "默认饱和度公式",
+  "spiceoflifelatiao.configuration.EAT_SECONDS": "默认食用时间公式"
+}
