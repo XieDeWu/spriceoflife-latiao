@@ -1,4 +1,4 @@
-package com.example.examplemod.util;
+package com.xdw.spiceoflife.latiao.util;
 
 import java.util.Optional;
 

@@ -1,7 +1,7 @@
-package com.example.examplemod;
+package com.xdw.spiceoflife.latiao;
 
-import com.example.examplemod.event.PlayerEventHandle;
-import com.example.examplemod.network.SyncHandler;
+import com.xdw.spiceoflife.latiao.event.PlayerEventHandle;
+import com.xdw.spiceoflife.latiao.network.SyncHandler;
 import org.slf4j.Logger;
 
 import com.mojang.logging.LogUtils;
@@ -31,10 +31,10 @@ import net.neoforged.neoforge.registries.DeferredItem;
 import net.neoforged.neoforge.registries.DeferredRegister;
 
 // The value here should match an entry in the META-INF/neoforge.mods.toml file
-@Mod(ExampleMod.MODID)
-public class ExampleMod {
+@Mod(SpiceOfLifeLatiao.MODID)
+public class SpiceOfLifeLatiao {
     // Define mod id in a common place for everything to reference
-    public static final String MODID = "examplemod";
+    public static final String MODID = "spiceoflife_latiao";
     public static final String VERSION = "1.0.0";
     // Directly reference a slf4j logger
     public static final Logger LOGGER = LogUtils.getLogger();
@@ -65,7 +65,7 @@ public class ExampleMod {
 
     // The constructor for the mod class is the first code that is run when your mod is loaded.
     // FML will recognize some parameter types like IEventBus or ModContainer and pass them in automatically.
-    public ExampleMod(IEventBus modEventBus, ModContainer modContainer) {
+    public SpiceOfLifeLatiao(IEventBus modEventBus, ModContainer modContainer) {
         // Register the commonSetup method for modloading
         modEventBus.addListener(this::commonSetup);
 //        NeoForge.EVENT_BUS.register(SyncHandler.class);

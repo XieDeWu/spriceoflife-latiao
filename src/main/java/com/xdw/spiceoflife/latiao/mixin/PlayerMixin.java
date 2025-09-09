@@ -1,7 +1,7 @@
-package com.example.examplemod.mixin;
+package com.xdw.spiceoflife.latiao.mixin;
 
-import com.example.examplemod.util.EatHistory;
-import com.example.examplemod.util.EatHistoryAcessor;
+import com.xdw.spiceoflife.latiao.util.EatHistory;
+import com.xdw.spiceoflife.latiao.util.EatHistoryAcessor;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.food.FoodData;
 import net.minecraft.world.food.FoodProperties;

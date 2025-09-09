@@ -1,8 +1,8 @@
-package com.example.examplemod.mixin;
+package com.xdw.spiceoflife.latiao.mixin;
 
-import com.example.examplemod.Config;
-import com.example.examplemod.util.EatHistory;
-import com.example.examplemod.util.EatHistoryAcessor;
+import com.xdw.spiceoflife.latiao.Config;
+import com.xdw.spiceoflife.latiao.util.EatHistory;
+import com.xdw.spiceoflife.latiao.util.EatHistoryAcessor;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.world.food.FoodData;
 import org.spongepowered.asm.mixin.Mixin;
@@ -12,13 +12,12 @@ import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
 import java.util.LinkedList;
-import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
 @Mixin(FoodData.class)
 public abstract class FoodDataMixin implements EatHistoryAcessor {
-    @Unique private final String eat_history_label = "examplemod:eat_history";
+    @Unique private final String eat_history_label = "spiceoflifelatiao:eat_history";
     @Unique private LinkedList<Integer> queueFood = new LinkedList<>();
     @Unique private LinkedList<Float> queueHunger = new LinkedList<>();
     @Unique private LinkedList<Float> queueSaturation = new LinkedList<>();

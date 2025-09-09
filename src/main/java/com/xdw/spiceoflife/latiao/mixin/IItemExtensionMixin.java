@@ -1,8 +1,7 @@
-package com.example.examplemod.mixin;
+package com.xdw.spiceoflife.latiao.mixin;
 
-import com.example.examplemod.Config;
-import com.example.examplemod.util.EatFormulaContext;
-import com.example.examplemod.util.EatHistory;
+import com.xdw.spiceoflife.latiao.util.EatFormulaContext;
+import com.xdw.spiceoflife.latiao.util.EatHistory;
 import net.minecraft.core.component.DataComponents;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.player.Player;

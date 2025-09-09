@@ -1,7 +1,7 @@
-package com.example.examplemod.event;
+package com.xdw.spiceoflife.latiao.event;
 
-import com.example.examplemod.util.EatFormulaContext;
-import com.example.examplemod.util.EatHistoryAcessor;
+import com.xdw.spiceoflife.latiao.util.EatFormulaContext;
+import com.xdw.spiceoflife.latiao.util.EatHistoryAcessor;
 import net.minecraft.world.entity.player.Player;
 import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.neoforge.event.entity.player.PlayerEvent;
