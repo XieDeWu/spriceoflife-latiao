@@ -21,6 +21,11 @@ import java.util.stream.IntStream;
 public record EatFormulaContext(
         @NotNull Float hunger_level,
         @NotNull Float saturation_level,
+        @NotNull Float sum_hunger_short,
+        @NotNull Float sum_hunger_long,
+        @NotNull Float sum_saturation_short,
+        @NotNull Float sum_saturation_long,
+        @NotNull Float loss,
         @NotNull Float hunger_org,
         @NotNull Float saturation_org,
         @NotNull Float eat_seconds_org,
@@ -32,28 +37,26 @@ public record EatFormulaContext(
         @NotNull Float saturation_long,
         @NotNull Float eaten_short,
         @NotNull Float eaten_long,
-        @NotNull Float sum_hunger_short,
-        @NotNull Float sum_hunger_long,
-        @NotNull Float sum_saturation_short,
-        @NotNull Float sum_saturation_long,
-        @NotNull Float loss,
         @NotNull Float hunger,
         @NotNull Float saturation,
         @NotNull Float eat_seconds
 ) {
 
     public static Optional<EatFormulaContext> from(Player player, Optional<ItemStack> item){
+        int lengthLong = Config.HISTORY_LENGTH_LONG.get();
+        int lengthShort = Math.min(Config.HISTORY_LENGTH_SHORT.get(),lengthLong);
         Optional<Integer> foodHash = item.map(ItemStack::getItem).map(EatHistory::getFoodHash);
         FoodData foodData = player.getFoodData();
         Optional<EatHistory> eatHistory = ((EatHistoryAcessor)foodData)
                 .getEatHistory()
                 .flatMap(EatHistory::fromBytes);
-        Optional<FoodProperties> foodProperties = item.map(x->x.get(DataComponents.FOOD));
-        if(foodProperties == null) return Optional.empty();
-        int lengthLong = Config.HISTORY_LENGTH_LONG.get();
-        int lengthShort = Math.min(Config.HISTORY_LENGTH_SHORT.get(),lengthLong);
+        Optional<FoodProperties> foodProperties = item.flatMap(x-> Optional.ofNullable(x.get(DataComponents.FOOD)));
         Float hunger_level = (float) foodData.getFoodLevel();
         Float saturation_level = foodData.getSaturationLevel();
+        AtomicReference<Float> sum_hunger_long = new AtomicReference<>(0f);
+        AtomicReference<Float> sum_saturation_long = new AtomicReference<>(0f);
+        AtomicReference<Float> sum_hunger_short = new AtomicReference<>(0f);
+        AtomicReference<Float> sum_saturation_short = new AtomicReference<>(0f);
         Float hunger_org = foodProperties.map(x->(float)x.nutrition()).orElse(0f);
         Float saturation_org = foodProperties.map(FoodProperties::saturation).orElse(0f);
         Float eat_seconds_org = foodProperties.map(FoodProperties::eatSeconds).orElse(0f);
@@ -72,10 +75,6 @@ public record EatFormulaContext(
         AtomicReference<Float> saturation_long = new AtomicReference<>(0f);
         AtomicReference<Float> eaten_short = new AtomicReference<>(0f);
         AtomicReference<Float> eaten_long = new AtomicReference<>(0f);
-        AtomicReference<Float> sum_hunger_long = new AtomicReference<>(0f);
-        AtomicReference<Float> sum_saturation_long = new AtomicReference<>(0f);
-        AtomicReference<Float> sum_hunger_short = new AtomicReference<>(0f);
-        AtomicReference<Float> sum_saturation_short = new AtomicReference<>(0f);
         record Tuple(int index, int foodHash, float hunger, float saturation) {}
         eatHistory.stream()
                 .flatMap(eh -> {
@@ -107,6 +106,10 @@ public record EatFormulaContext(
         LinkedHashMap<String, Float> context = new LinkedHashMap<>();
         context.put("HUNGER_LEVEL",hunger_level);
         context.put("SATURATION_LEVEL",saturation_level);
+        context.put("SUM_HUNGER_SHORT",sum_hunger_short.get());
+        context.put("SUM_HUNGER_LONG", sum_hunger_long.get());
+        context.put("SUM_SATURATION_SHORT",sum_saturation_short.get());
+        context.put("SUM_SATURATION_LONG", sum_saturation_long.get());
         context.put("HUNGER_ORG",hunger_org);
         context.put("SATURATION_ORG",saturation_org);
         context.put("EAT_SECONDS_ORG",eat_seconds_org);
@@ -117,10 +120,6 @@ public record EatFormulaContext(
         context.put("SATURATION_SHORT",saturation_short.get());
         context.put("EATEN_SHORT",eaten_short.get());
         context.put("EATEN_LONG",eaten_long.get());
-        context.put("SUM_HUNGER_SHORT",sum_hunger_short.get());
-        context.put("SUM_HUNGER_LONG", sum_hunger_long.get());
-        context.put("SUM_SATURATION_SHORT",sum_saturation_short.get());
-        context.put("SUM_SATURATION_LONG", sum_saturation_long.get());
         try {
             Float loss = (float) eval(Config.LOSS.get(),context).evaluate();
             context.put("LOSS",loss);
@@ -133,6 +132,11 @@ public record EatFormulaContext(
             return Optional.of(new EatFormulaContext(
                     hunger_level,
                     saturation_level,
+                    sum_hunger_short.get(),
+                    sum_hunger_long.get(),
+                    sum_saturation_short.get(),
+                    sum_saturation_long.get(),
+                    loss,
                     hunger_org,
                     saturation_org,
                     eat_seconds_org,
@@ -144,11 +148,6 @@ public record EatFormulaContext(
                     saturation_long.get(),
                     eaten_short.get(),
                     eaten_long.get(),
-                    sum_hunger_short.get(),
-                    sum_hunger_long.get(),
-                    sum_saturation_short.get(),
-                    sum_saturation_long.get(),
-                    loss,
                     hunger,
                     saturation,
                     eat_seconds
