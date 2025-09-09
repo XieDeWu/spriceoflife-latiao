@@ -1,7 +1,7 @@
-package com.xdw.spiceoflife.latiao.mixin;
+package com.xdw.spiceoflifelatiao.mixin;
 
-import com.xdw.spiceoflife.latiao.util.EatHistory;
-import com.xdw.spiceoflife.latiao.util.EatHistoryAcessor;
+import com.xdw.spiceoflifelatiao.util.EatHistory;
+import com.xdw.spiceoflifelatiao.util.EatHistoryAcessor;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.food.FoodData;
 import net.minecraft.world.food.FoodProperties;

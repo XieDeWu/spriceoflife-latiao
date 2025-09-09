@@ -1,7 +1,7 @@
-package com.xdw.spiceoflife.latiao.network;
+package com.xdw.spiceoflifelatiao.network;
 
-import com.xdw.spiceoflife.latiao.SpiceOfLifeLatiao;
-import com.xdw.spiceoflife.latiao.util.EatHistoryAcessor;
+import com.xdw.spiceoflifelatiao.SpiceOfLifeLatiao;
+import com.xdw.spiceoflifelatiao.util.EatHistoryAcessor;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.food.FoodData;
 import net.neoforged.bus.api.SubscribeEvent;

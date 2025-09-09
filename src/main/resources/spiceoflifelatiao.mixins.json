@@ -1,6 +1,6 @@
 {
   "required": true,
-  "package": "com.xdw.spiceoflife.latiao.mixin",
+  "package": "com.xdw.spiceoflifelatiao.mixin",
   "compatibilityLevel": "JAVA_21",
   "mixins": [
     "FoodDataMixin",

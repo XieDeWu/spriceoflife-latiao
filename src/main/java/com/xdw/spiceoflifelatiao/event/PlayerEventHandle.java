@@ -1,8 +1,8 @@
-package com.xdw.spiceoflife.latiao.event;
+package com.xdw.spiceoflifelatiao.event;
 
-import com.xdw.spiceoflife.latiao.Config;
-import com.xdw.spiceoflife.latiao.util.EatFormulaContext;
-import com.xdw.spiceoflife.latiao.util.EatHistoryAcessor;
+import com.xdw.spiceoflifelatiao.Config;
+import com.xdw.spiceoflifelatiao.util.EatFormulaContext;
+import com.xdw.spiceoflifelatiao.util.EatHistoryAcessor;
 import net.minecraft.world.entity.player.Player;
 import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.neoforge.event.entity.player.PlayerEvent;
@@ -14,7 +14,7 @@ public class PlayerEventHandle {
     public static void tickPlayer(net.neoforged.neoforge.event.tick.PlayerTickEvent.Post event) {
         Player player = event.getEntity();
         if(player.isCreative() || player.isDeadOrDying()) return;
-        if(!Config.EANBLE.get()) return;
+        if(!Config.EANBLE_CHANGE.get()) return;
         EatFormulaContext.from(player, Optional.empty()).ifPresent(x->player.causeFoodExhaustion(x.loss()));
     }
     @SubscribeEvent

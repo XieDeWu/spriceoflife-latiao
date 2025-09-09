@@ -124,8 +124,6 @@ dependencies {
         }
     }
     additionalRuntimeClasspath "net.objecthunter:exp4j:0.4.8"
-
-    compileOnly "squeek.appleskin:appleskin-neoforge:mc1.21-3.0.7"
     runtimeOnly "squeek.appleskin:appleskin-neoforge:mc1.21-3.0.7"
 
     // Example optional mod dependency with JEI

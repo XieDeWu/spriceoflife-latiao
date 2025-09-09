@@ -1,4 +1,4 @@
-package com.xdw.spiceoflife.latiao.util;
+package com.xdw.spiceoflifelatiao.util;
 
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.Item;

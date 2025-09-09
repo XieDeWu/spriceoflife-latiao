@@ -1,4 +1,4 @@
-package com.xdw.spiceoflife.latiao;
+package com.xdw.spiceoflifelatiao;
 
 import net.neoforged.neoforge.common.ModConfigSpec;
 
@@ -7,9 +7,9 @@ import net.neoforged.neoforge.common.ModConfigSpec;
 public class Config {
     private static final ModConfigSpec.Builder BUILDER = new ModConfigSpec.Builder();
 
-    public static final ModConfigSpec.ConfigValue<Boolean> EANBLE = BUILDER
+    public static final ModConfigSpec.ConfigValue<Boolean> EANBLE_CHANGE = BUILDER
             .comment("启用生活调味料饮食辣条版调整")
-            .define("enable",true);
+            .define("enable_change",true);
 
     public static final ModConfigSpec.ConfigValue<Integer> HISTORY_LENGTH_LONG = BUILDER
             .comment("长期食用历史长度,用于统计长期饮食数据")

@@ -1,6 +1,6 @@
-package com.xdw.spiceoflife.latiao.util;
+package com.xdw.spiceoflifelatiao.util;
 
-import com.xdw.spiceoflife.latiao.Config;
+import com.xdw.spiceoflifelatiao.Config;
 import net.minecraft.core.component.DataComponents;
 import net.minecraft.world.effect.MobEffectCategory;
 import net.minecraft.world.entity.player.Player;

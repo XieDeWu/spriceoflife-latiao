@@ -1,8 +1,8 @@
-package com.xdw.spiceoflife.latiao.mixin;
+package com.xdw.spiceoflifelatiao.mixin;
 
-import com.xdw.spiceoflife.latiao.Config;
-import com.xdw.spiceoflife.latiao.util.EatFormulaContext;
-import com.xdw.spiceoflife.latiao.util.EatHistory;
+import com.xdw.spiceoflifelatiao.Config;
+import com.xdw.spiceoflifelatiao.util.EatFormulaContext;
+import com.xdw.spiceoflifelatiao.util.EatHistory;
 import net.minecraft.core.component.DataComponents;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.player.Player;
@@ -31,7 +31,7 @@ public interface IItemExtensionMixin {
     default FoodProperties getFoodProperties(ItemStack stack, @Nullable LivingEntity entity) {
         var food = stack.get(DataComponents.FOOD);
         if(food == null) return null;
-        if(!Config.EANBLE.get()) return food;
+        if(!Config.EANBLE_CHANGE.get()) return food;
         if(entity instanceof Player player) EatHistory.recentPlayer = Optional.of(player);
         AtomicInteger nutrition = new AtomicInteger(food.nutrition());
         AtomicReference<Float> saturation = new AtomicReference<>(food.saturation());
