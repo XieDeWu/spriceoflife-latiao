@@ -25,12 +25,14 @@ public record EatFormulaContext(
         @NotNull Float sum_hunger_long,
         @NotNull Float sum_saturation_short,
         @NotNull Float sum_saturation_long,
+        @NotNull Float armor,
+        @NotNull Float light,
         @NotNull Float loss,
         @NotNull Float hunger_org,
         @NotNull Float saturation_org,
         @NotNull Float eat_seconds_org,
-        @NotNull Float buff,
-        @NotNull Float debuff,
+        @NotNull Float food_buff,
+        @NotNull Float food_debuff,
         @NotNull Float hunger_short,
         @NotNull Float hunger_long,
         @NotNull Float saturation_short,
@@ -103,6 +105,9 @@ public record EatFormulaContext(
                         eaten_short.updateAndGet(v -> v + 1f);
                     }
                 });
+        float armor = player.getArmorValue();
+        float light = LevelCalcCached.light;
+
         LinkedHashMap<String, Float> context = new LinkedHashMap<>();
         context.put("HUNGER_LEVEL",hunger_level);
         context.put("SATURATION_LEVEL",saturation_level);
@@ -110,6 +115,8 @@ public record EatFormulaContext(
         context.put("SUM_HUNGER_LONG", sum_hunger_long.get());
         context.put("SUM_SATURATION_SHORT",sum_saturation_short.get());
         context.put("SUM_SATURATION_LONG", sum_saturation_long.get());
+        context.put("ARMOR",armor);
+        context.put("LIGHT",light);
         context.put("HUNGER_ORG",hunger_org);
         context.put("SATURATION_ORG",saturation_org);
         context.put("EAT_SECONDS_ORG",eat_seconds_org);
@@ -136,6 +143,8 @@ public record EatFormulaContext(
                     sum_hunger_long.get(),
                     sum_saturation_short.get(),
                     sum_saturation_long.get(),
+                    armor,
+                    light,
                     loss,
                     hunger_org,
                     saturation_org,

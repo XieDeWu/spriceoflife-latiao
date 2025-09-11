@@ -3,6 +3,7 @@ package com.xdw.spiceoflifelatiao.event;
 import com.xdw.spiceoflifelatiao.Config;
 import com.xdw.spiceoflifelatiao.util.EatFormulaContext;
 import com.xdw.spiceoflifelatiao.util.EatHistoryAcessor;
+import com.xdw.spiceoflifelatiao.util.LevelCalcCached;
 import net.minecraft.world.entity.player.Player;
 import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.neoforge.event.entity.player.PlayerEvent;
@@ -16,6 +17,8 @@ public class PlayerEventHandle {
         if(player.isCreative() || player.isDeadOrDying()) return;
         if(!Config.EANBLE_CHANGE.get()) return;
         EatFormulaContext.from(player, Optional.empty()).ifPresent(x->player.causeFoodExhaustion(x.loss()));
+
+        LevelCalcCached.update(player);
     }
     @SubscribeEvent
     public static void onPlayerClone(PlayerEvent.Clone event){

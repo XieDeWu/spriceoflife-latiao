@@ -50,15 +50,15 @@ public class Config {
 
     public static final ModConfigSpec.ConfigValue<String> HUNGER = BUILDER
         .comment("默认：短期饮食、饥饿程度、长期饮食、最低点")
-        .define("HUNGER", "HUNGER_ORG*0.4*max((0.8^EATEN_SHORT),max(1-HUNGER_LEVEL/12,0))" +
-                "+HUNGER_ORG*0.4*max(1-EATEN_LONG/64,0)" +
+        .define("HUNGER", "HUNGER_ORG*0.4*max((0.9^EATEN_SHORT),max(1-HUNGER_LEVEL/12,0))" +
+                "+HUNGER_ORG*0.4*max(0,1-EATEN_LONG/max(16,64-2*HUNGER_ORG-SATURATION_ORG))" +
                 "+HUNGER_ORG*0.2");
 
     public static final ModConfigSpec.ConfigValue<String> SATURATION = BUILDER
-        .comment("默认：短期饮食、长期饮食、饥饿程度")
+        .comment("默认：短期饮食、长期饮食、最低点")
         .define("SATURATION", "SATURATION_ORG" +
                 "*(0.9^EATEN_SHORT)" +
-                "*max(1-EATEN_LONG/64,0)" +
+                "*max(0,1-EATEN_LONG/max(16,32+8*(SATURATION_ORG-HUNGER_ORG)))" +
                 "+(HUNGER_ORG*0.2+SATURATION_ORG*0.2)" +
                 "*max(1-HUNGER_LEVEL/12,0)");
 
@@ -67,7 +67,7 @@ public class Config {
             .define("EAT_SECONDS","EAT_SECONDS_ORG" +
                     "*(0.5+0.1*(2*HUNGER_ORG-HUNGER))" +
                     "*(49/30*(10/7)^(HUNGER_LEVEL/10)-4/3)" +
-                    "*(1/(1+BUFF))*(2-1/(1+DEBUFF))");
+                    "*(1/(1+FOOD_BUFF))*(2-1/(1+FOOD_DEBUFF))");
 
     static final ModConfigSpec SPEC = BUILDER.build();
 
