@@ -60,13 +60,13 @@ public record EatFormulaContext(
         Float hunger_org = foodProperties.map(x->(float)x.nutrition()).orElse(0f);
         Float saturation_org = foodProperties.map(FoodProperties::saturation).orElse(0f);
         Float eat_seconds_org = foodProperties.map(FoodProperties::eatSeconds).orElse(0f);
-        AtomicReference<Float> buff = new AtomicReference<>(0f);
-        AtomicReference<Float> debuff = new AtomicReference<>(0f);
+        AtomicReference<Float> food_buff = new AtomicReference<>(0f);
+        AtomicReference<Float> food_debuff = new AtomicReference<>(0f);
         foodProperties.ifPresent(x->{
             x.effects().forEach(y-> {
                 var category = y.effect().getEffect().value().getCategory();
-                if(category == MobEffectCategory.BENEFICIAL) buff.updateAndGet(v -> v + 1f);
-                if(category == MobEffectCategory.HARMFUL) debuff.updateAndGet(v -> v + 1f);
+                if(category == MobEffectCategory.BENEFICIAL) food_buff.updateAndGet(v -> v + 1f);
+                if(category == MobEffectCategory.HARMFUL) food_debuff.updateAndGet(v -> v + 1f);
             });
         });
         AtomicReference<Float> hunger_short = new AtomicReference<>(0f);
@@ -113,8 +113,8 @@ public record EatFormulaContext(
         context.put("HUNGER_ORG",hunger_org);
         context.put("SATURATION_ORG",saturation_org);
         context.put("EAT_SECONDS_ORG",eat_seconds_org);
-        context.put("BUFF",buff.get());
-        context.put("DEBUFF",debuff.get());
+        context.put("FOOD_BUFF",food_buff.get());
+        context.put("FOOD_DEBUFF",food_debuff.get());
         context.put("HUNGER_SHORT",hunger_short.get());
         context.put("HUNGER_LONG",hunger_long.get());
         context.put("SATURATION_SHORT",saturation_short.get());
@@ -140,8 +140,8 @@ public record EatFormulaContext(
                     hunger_org,
                     saturation_org,
                     eat_seconds_org,
-                    buff.get(),
-                    debuff.get(),
+                    food_buff.get(),
+                    food_debuff.get(),
                     hunger_short.get(),
                     hunger_long.get(),
                     saturation_short.get(),
