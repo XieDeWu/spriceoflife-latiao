@@ -39,14 +39,14 @@ LOSS = 0.005
 *1.5^PLAYER_DEBUFF
 ```
 ### 默认饱食度公式 HUNGER：
-#### 短期饮食、饥饿程度、长期饮食、最低点
+#### 短期饮食、长期饮食、最低点
 ```text
 HUNGER = HUNGER_ORG*0.4*max((0.9^EATEN_SHORT),max(1-HUNGER_LEVEL/12,0))
 +HUNGER_ORG*0.4*max(0,1-EATEN_LONG/max(16,64-2*HUNGER_ORG-SATURATION_ORG))
 +HUNGER_ORG*0.2
 ```
 ### 默认饱和度公式 SATURATION：
-#### 短期饮食、长期饮食、最低点、饥饿程度
+#### 短期饮食、长期饮食、最低点
 ```text
 SATURATION = SATURATION_ORG
 *(0.9^EATEN_SHORT)
@@ -54,7 +54,7 @@ SATURATION = SATURATION_ORG
 +(HUNGER_ORG*0.2+SATURATION_ORG*0.2)*max(1-HUNGER_LEVEL/12,0)
 ```
 ### 默认食用时间公式 EAT_SECONDS：
-#### 食物原食用时间、食物原饱食度与饱食偏移、饥饿程度、食物效果数
+#### 食物原饱食度与饱食偏移、饥饿程度、食物效果数
 ```text
 EAT_SECONDS = EAT_SECONDS_ORG
 *(0.5+0.1*(2*HUNGER_ORG-HUNGER))

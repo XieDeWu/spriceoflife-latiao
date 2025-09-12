@@ -126,13 +126,13 @@ public record EatFormulaContext(
         context.put("EATEN_SHORT",eaten_short.get());
         context.put("EATEN_LONG",eaten_long.get());
         try {
-            Float loss = (float) eval(Config.LOSS.get(),context).evaluate();
+            Float loss = (float) eval(String.join("",Config.LOSS.get()),context).evaluate();
             context.put("LOSS",loss);
-            Float hunger = (float) eval(Config.HUNGER.get(),context).evaluate();
+            Float hunger = (float) eval(String.join("",Config.HUNGER.get()),context).evaluate();
             context.put("HUNGER",hunger);
-            Float saturation = (float) eval(Config.SATURATION.get(),context).evaluate();
+            Float saturation = (float) eval(String.join("",Config.SATURATION.get()),context).evaluate();
             context.put("SATURATION",saturation);
-            Float eat_seconds = (float) eval(Config.EAT_SECONDS.get(),context).evaluate();
+            Float eat_seconds = (float) eval(String.join("",Config.EAT_SECONDS.get()),context).evaluate();
             context.put("EAT_SECONDS",eat_seconds);
             return Optional.of(new EatFormulaContext(
                     loss,

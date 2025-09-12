@@ -2,6 +2,8 @@ package com.xdw.spiceoflifelatiao;
 
 import net.neoforged.neoforge.common.ModConfigSpec;
 
+import java.util.List;
+
 // An example config class. This is not required, but it's a good idea to have one to keep your config organized.
 // Demonstrates how to use Neo's config APIs
 public class Config {
@@ -49,40 +51,44 @@ public class Config {
             .comment("用于统计短期饮食数据")
             .defineInRange("historyLengthShort", 16, 0, 1024);
 
-    public static final ModConfigSpec.ConfigValue<String> LOSS = BUILDER
-            .comment("默认：固定系数、饥饿程度、短期营养、短期摄入、过饱和惩罚")
-            .define("LOSS", "0.005" +
-                    "*2^(HUNGER_LEVEL/20-1)" +
-                    "*0.5^(SUM_SATURATION_SHORT/max(SUM_HUNGER_SHORT,1)-1)" +
-                    "*2^((SUM_SATURATION_SHORT+SUM_HUNGER_SHORT)/128 -1)" +
-                    "*(1+2^(SATURATION_LEVEL/4-4)-0.0625)" +
-                    "*(1+(ARMOR/20)^2.41)" +
-                    "*(1.5-0.5*LIGHT/15)" +
-                    "*(1+0.5*IS_WET*(IS_WET+RAIN_LEVEL+THUNDER_LEVEL))" +
-                    "*(2-BLOCK_SPEED_FACTOR)" +
-                    "*0.8^PLAYER_BUFF" +
-                    "*1.5^PLAYER_DEBUFF");
+    public static final ModConfigSpec.ConfigValue<List<? extends String>> LOSS = BUILDER
+            .comment("默认：固定系数、饥饿程度、短期营养、短期摄入、过饱和、盔甲值、亮度、湿漉、方块速度系数，玩家状态")
+            .defineListAllowEmpty("LOSS", List.of("0.005",
+                    "*2^(HUNGER_LEVEL/20-1)",
+                    "*0.5^(SUM_SATURATION_SHORT/max(SUM_HUNGER_SHORT,1)-1)",
+                    "*2^((SUM_SATURATION_SHORT+SUM_HUNGER_SHORT)/128 -1)",
+                    "*(1+2^(SATURATION_LEVEL/4-4)-0.0625)",
+                    "*(1+(ARMOR/20)^2.41)",
+                    "*(1.5-0.5*LIGHT/15)",
+                    "*(1+0.5*IS_WET*(IS_WET+RAIN_LEVEL+THUNDER_LEVEL))",
+                    "*(2-BLOCK_SPEED_FACTOR)",
+                    "*0.8^PLAYER_BUFF",
+                    "*1.5^PLAYER_DEBUFF"
+            ),()->"",it->it instanceof String);
 
-    public static final ModConfigSpec.ConfigValue<String> HUNGER = BUILDER
-        .comment("默认：短期饮食、饥饿程度、长期饮食、最低点")
-        .define("HUNGER", "HUNGER_ORG*0.4*max((0.9^EATEN_SHORT),max(1-HUNGER_LEVEL/12,0))" +
-                "+HUNGER_ORG*0.4*max(0,1-EATEN_LONG/max(16,64-2*HUNGER_ORG-SATURATION_ORG))" +
-                "+HUNGER_ORG*0.2");
-
-    public static final ModConfigSpec.ConfigValue<String> SATURATION = BUILDER
+    public static final ModConfigSpec.ConfigValue<List<? extends String>> HUNGER = BUILDER
         .comment("默认：短期饮食、长期饮食、最低点")
-        .define("SATURATION", "SATURATION_ORG" +
-                "*(0.9^EATEN_SHORT)" +
-                "*max(0,1-EATEN_LONG/max(16,32+8*(SATURATION_ORG-HUNGER_ORG)))" +
-                "+(HUNGER_ORG*0.2+SATURATION_ORG*0.2)" +
-                "*max(1-HUNGER_LEVEL/12,0)");
+        .defineListAllowEmpty("HUNGER", List.of(
+                "HUNGER_ORG*0.4*max((0.9^EATEN_SHORT),max(1-HUNGER_LEVEL/12,0))",
+                "+HUNGER_ORG*0.4*max(0,1-EATEN_LONG/max(16,64-2*HUNGER_ORG-SATURATION_ORG))",
+                "+HUNGER_ORG*0.2"
+        ),()->"",it->it instanceof String);
 
-    public static final ModConfigSpec.ConfigValue<String> EAT_SECONDS = BUILDER
-            .comment("默认：食物原食用时间、食物原饱食度与饱食偏移、饥饿程度、食物效果数")
-            .define("EAT_SECONDS","EAT_SECONDS_ORG" +
-                    "*(0.5+0.1*(2*HUNGER_ORG-HUNGER))" +
-                    "*(49/30*(10/7)^(HUNGER_LEVEL/10)-4/3)" +
-                    "*(1/(1+FOOD_BUFF))*(2-1/(1+FOOD_DEBUFF))");
+    public static final ModConfigSpec.ConfigValue<List<? extends String>> SATURATION = BUILDER
+        .comment("默认：短期饮食、长期饮食、最低点")
+        .defineListAllowEmpty("SATURATION", List.of("SATURATION_ORG",
+                "*(0.9^EATEN_SHORT)",
+                "*max(0,1-EATEN_LONG/max(16,32+8*(SATURATION_ORG-HUNGER_ORG)))",
+                "+(HUNGER_ORG*0.2+SATURATION_ORG*0.2)*max(1-HUNGER_LEVEL/12,0)"
+        ),()->"",it->it instanceof String);
+
+    public static final ModConfigSpec.ConfigValue<List<? extends String>> EAT_SECONDS = BUILDER
+            .comment("默认：食物原饱食度与饱食偏移、饥饿程度、食物效果数")
+            .defineListAllowEmpty("EAT_SECONDS",List.of("EAT_SECONDS_ORG",
+                    "*(0.5+0.1*(2*HUNGER_ORG-HUNGER))",
+                    "*(49/30*(10/7)^(HUNGER_LEVEL/10)-4/3)",
+                    "*(1/(1+FOOD_BUFF))*(2-1/(1+FOOD_DEBUFF))"
+            ),()->"",it->it instanceof String);
 
     static final ModConfigSpec SPEC = BUILDER.build();
 
