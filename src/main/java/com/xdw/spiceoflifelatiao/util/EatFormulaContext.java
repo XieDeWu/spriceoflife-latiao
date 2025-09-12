@@ -24,15 +24,16 @@ public record EatFormulaContext(
         @NotNull Float eat_seconds
 ) {
 
-    public static Optional<EatFormulaContext> from(Player player, Optional<ItemStack> item){
+    public static Optional<EatFormulaContext> from(Player player, ItemStack item){
+        var _item = Optional.of(item);
         int lengthLong = Config.HISTORY_LENGTH_LONG.get();
         int lengthShort = Math.min(Config.HISTORY_LENGTH_SHORT.get(),lengthLong);
-        Optional<Integer> foodHash = item.map(ItemStack::getItem).map(EatHistory::getFoodHash);
+        Optional<Integer> foodHash = _item.map(ItemStack::getItem).map(EatHistory::getFoodHash);
         FoodData foodData = player.getFoodData();
         Optional<EatHistory> eatHistory = ((IEatHistoryAcessor)foodData)
                 .getEatHistory()
                 .flatMap(EatHistory::fromBytes);
-        Optional<FoodProperties> foodProperties = item.flatMap(x-> Optional.ofNullable(x.get(DataComponents.FOOD)));
+        Optional<FoodProperties> foodProperties = _item.flatMap(x-> Optional.ofNullable(x.get(DataComponents.FOOD)));
         Float hunger_level = (float) foodData.getFoodLevel();
         Float saturation_level = foodData.getSaturationLevel();
         AtomicReference<Float> sum_hunger_long = new AtomicReference<>(0f);
@@ -44,14 +45,12 @@ public record EatFormulaContext(
         Float eat_seconds_org = foodProperties.map(FoodProperties::eatSeconds).orElse(0f);
         AtomicReference<Float> food_buff = new AtomicReference<>(0f);
         AtomicReference<Float> food_debuff = new AtomicReference<>(0f);
-        foodProperties.ifPresent(x->{
-            x.effects().forEach(y-> {
-                switch (y.effect().getEffect().value().getCategory()){
-                    case BENEFICIAL -> food_buff.updateAndGet(v -> v + 1f);
-                    case HARMFUL -> food_debuff.updateAndGet(v -> v + 1f);
-                }
-            });
-        });
+        foodProperties.ifPresent(x-> x.effects().forEach(y-> {
+            switch (y.effect().getEffect().value().getCategory()){
+                case BENEFICIAL -> food_buff.updateAndGet(v -> v + 1f);
+                case HARMFUL -> food_debuff.updateAndGet(v -> v + 1f);
+            }
+        }));
         AtomicReference<Float> hunger_short = new AtomicReference<>(0f);
         AtomicReference<Float> hunger_long = new AtomicReference<>(0f);
         AtomicReference<Float> saturation_short = new AtomicReference<>(0f);
@@ -162,9 +161,7 @@ public record EatFormulaContext(
                     }
                 });
         Expression build = exp.build();
-        context.keySet().forEach(it->{
-            build.setVariable(it,context.get(it));
-        });
+        context.keySet().forEach(it-> build.setVariable(it,context.get(it)));
         return build;
     }
 }

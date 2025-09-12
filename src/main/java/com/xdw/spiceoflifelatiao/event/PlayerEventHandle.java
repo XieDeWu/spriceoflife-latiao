@@ -5,10 +5,9 @@ import com.xdw.spiceoflifelatiao.util.EatFormulaContext;
 import com.xdw.spiceoflifelatiao.util.IEatHistoryAcessor;
 import com.xdw.spiceoflifelatiao.util.LevelCalcCached;
 import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.item.ItemStack;
 import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.neoforge.event.entity.player.PlayerEvent;
-
-import java.util.Optional;
 
 public class PlayerEventHandle {
     @SubscribeEvent
@@ -16,7 +15,7 @@ public class PlayerEventHandle {
         Player player = event.getEntity();
         if(player.isCreative() || player.isDeadOrDying()) return;
         if(!Config.EANBLE_CHANGE.get()) return;
-        EatFormulaContext.from(player, Optional.empty()).ifPresent(x->player.causeFoodExhaustion(x.loss()));
+        EatFormulaContext.from(player, ItemStack.EMPTY).ifPresent(x->player.causeFoodExhaustion(x.loss()));
 
         LevelCalcCached.update(player);
     }
