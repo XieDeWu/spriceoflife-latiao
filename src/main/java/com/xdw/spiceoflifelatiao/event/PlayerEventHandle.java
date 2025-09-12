@@ -2,7 +2,7 @@ package com.xdw.spiceoflifelatiao.event;
 
 import com.xdw.spiceoflifelatiao.Config;
 import com.xdw.spiceoflifelatiao.util.EatFormulaContext;
-import com.xdw.spiceoflifelatiao.util.EatHistoryAcessor;
+import com.xdw.spiceoflifelatiao.util.IEatHistoryAcessor;
 import com.xdw.spiceoflifelatiao.util.LevelCalcCached;
 import net.minecraft.world.entity.player.Player;
 import net.neoforged.bus.api.SubscribeEvent;
@@ -23,7 +23,7 @@ public class PlayerEventHandle {
     @SubscribeEvent
     public static void onPlayerClone(PlayerEvent.Clone event){
         if(!event.isWasDeath()) return;
-        if(!(event.getOriginal().getFoodData() instanceof EatHistoryAcessor old) || !(event.getEntity().getFoodData() instanceof EatHistoryAcessor neo )) return;
+        if(!(event.getOriginal().getFoodData() instanceof IEatHistoryAcessor old) || !(event.getEntity().getFoodData() instanceof IEatHistoryAcessor neo )) return;
         old.getEatHistory().ifPresent(neo::setEatHistory);
     }
 }

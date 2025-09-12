@@ -1,7 +1,7 @@
 package com.xdw.spiceoflifelatiao.network;
 
 import com.xdw.spiceoflifelatiao.SpiceOfLifeLatiao;
-import com.xdw.spiceoflifelatiao.util.EatHistoryAcessor;
+import com.xdw.spiceoflifelatiao.util.IEatHistoryAcessor;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.food.FoodData;
 import net.neoforged.bus.api.SubscribeEvent;
@@ -26,8 +26,8 @@ public class SyncHandler {
         if (!(event.getEntity() instanceof ServerPlayer player))
             return;
         FoodData foodData = player.getFoodData();
-        if (foodData instanceof EatHistoryAcessor){
-            ((EatHistoryAcessor)(foodData))
+        if (foodData instanceof IEatHistoryAcessor){
+            ((IEatHistoryAcessor)(foodData))
                     .getEatHistory()
                     .ifPresent(x->{
                         PacketDistributor.sendToPlayer(player, new MessageQueueSync(x));

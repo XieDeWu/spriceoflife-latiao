@@ -6,9 +6,10 @@ import net.minecraft.world.level.LightLayer;
 
 public class LevelCalcCached {
     public static float light = 0f;
+    public static float rainLevel = 0f;
     public static void update(Player player){
         Level level = player.level();
-        float rainLevel = level.getRainLevel(0);
+        rainLevel = level.getRainLevel(0);
         float thunderLevel = level.getThunderLevel(0);
         float dayTime = (float) (level.getTimeOfDay(0)+0.25)%1f;
         double day = dayTime * Math.PI * 2;
@@ -18,6 +19,5 @@ public class LevelCalcCached {
 
         float skyLight = (float) (baseSkyLight / (1+rainLevel+thunderLevel) * Math.max(Math.sin(day),0.6 * level.getMoonBrightness() *Math.sin(night)));
         light = Math.max(blockLight,skyLight);
-
     }
 }

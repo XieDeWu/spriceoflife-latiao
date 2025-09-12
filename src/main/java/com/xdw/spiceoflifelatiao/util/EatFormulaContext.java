@@ -1,8 +1,8 @@
 package com.xdw.spiceoflifelatiao.util;
 
 import com.xdw.spiceoflifelatiao.Config;
+import com.xdw.spiceoflifelatiao.mixin.PlayerMixin;
 import net.minecraft.core.component.DataComponents;
-import net.minecraft.world.effect.MobEffectCategory;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.food.FoodData;
 import net.minecraft.world.food.FoodProperties;
@@ -19,26 +19,7 @@ import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.IntStream;
 
 public record EatFormulaContext(
-        @NotNull Float hunger_level,
-        @NotNull Float saturation_level,
-        @NotNull Float sum_hunger_short,
-        @NotNull Float sum_hunger_long,
-        @NotNull Float sum_saturation_short,
-        @NotNull Float sum_saturation_long,
-        @NotNull Float armor,
-        @NotNull Float light,
         @NotNull Float loss,
-        @NotNull Float hunger_org,
-        @NotNull Float saturation_org,
-        @NotNull Float eat_seconds_org,
-        @NotNull Float food_buff,
-        @NotNull Float food_debuff,
-        @NotNull Float hunger_short,
-        @NotNull Float hunger_long,
-        @NotNull Float saturation_short,
-        @NotNull Float saturation_long,
-        @NotNull Float eaten_short,
-        @NotNull Float eaten_long,
         @NotNull Float hunger,
         @NotNull Float saturation,
         @NotNull Float eat_seconds
@@ -49,7 +30,7 @@ public record EatFormulaContext(
         int lengthShort = Math.min(Config.HISTORY_LENGTH_SHORT.get(),lengthLong);
         Optional<Integer> foodHash = item.map(ItemStack::getItem).map(EatHistory::getFoodHash);
         FoodData foodData = player.getFoodData();
-        Optional<EatHistory> eatHistory = ((EatHistoryAcessor)foodData)
+        Optional<EatHistory> eatHistory = ((IEatHistoryAcessor)foodData)
                 .getEatHistory()
                 .flatMap(EatHistory::fromBytes);
         Optional<FoodProperties> foodProperties = item.flatMap(x-> Optional.ofNullable(x.get(DataComponents.FOOD)));
@@ -66,9 +47,10 @@ public record EatFormulaContext(
         AtomicReference<Float> food_debuff = new AtomicReference<>(0f);
         foodProperties.ifPresent(x->{
             x.effects().forEach(y-> {
-                var category = y.effect().getEffect().value().getCategory();
-                if(category == MobEffectCategory.BENEFICIAL) food_buff.updateAndGet(v -> v + 1f);
-                if(category == MobEffectCategory.HARMFUL) food_debuff.updateAndGet(v -> v + 1f);
+                switch (y.effect().getEffect().value().getCategory()){
+                    case BENEFICIAL -> food_buff.updateAndGet(v -> v + 1f);
+                    case HARMFUL -> food_debuff.updateAndGet(v -> v + 1f);
+                }
             });
         });
         AtomicReference<Float> hunger_short = new AtomicReference<>(0f);
@@ -107,6 +89,17 @@ public record EatFormulaContext(
                 });
         float armor = player.getArmorValue();
         float light = LevelCalcCached.light;
+        float is_wet = player.isInWaterRainOrBubble() ? 1f : 0f;
+        float rain_level = LevelCalcCached.rainLevel;
+        float block_speed_factor = ((IPlayerAcessor) player).getBlockSpeedFactor_public();
+        AtomicReference<Float> player_buff = new AtomicReference<>(0f);
+        AtomicReference<Float> player_debuff = new AtomicReference<>(0f);
+        player.getActiveEffects().forEach(x->{
+            switch (x.getEffect().value().getCategory()){
+                case BENEFICIAL -> player_buff.updateAndGet(v -> v + 1);
+                case HARMFUL -> player_debuff.updateAndGet(v -> v + 1);
+            }
+        });
 
         LinkedHashMap<String, Float> context = new LinkedHashMap<>();
         context.put("HUNGER_LEVEL",hunger_level);
@@ -117,6 +110,11 @@ public record EatFormulaContext(
         context.put("SUM_SATURATION_LONG", sum_saturation_long.get());
         context.put("ARMOR",armor);
         context.put("LIGHT",light);
+        context.put("IS_WET",is_wet);
+        context.put("RAIN_LEVEL",rain_level);
+        context.put("BLOCK_SPEED_FACTOR",block_speed_factor);
+        context.put("PLAYER_BUFF",player_buff.get());
+        context.put("PLAYER_DEBUFF",player_debuff.get());
         context.put("HUNGER_ORG",hunger_org);
         context.put("SATURATION_ORG",saturation_org);
         context.put("EAT_SECONDS_ORG",eat_seconds_org);
@@ -137,26 +135,7 @@ public record EatFormulaContext(
             Float eat_seconds = (float) eval(Config.EAT_SECONDS.get(),context).evaluate();
             context.put("EAT_SECONDS",eat_seconds);
             return Optional.of(new EatFormulaContext(
-                    hunger_level,
-                    saturation_level,
-                    sum_hunger_short.get(),
-                    sum_hunger_long.get(),
-                    sum_saturation_short.get(),
-                    sum_saturation_long.get(),
-                    armor,
-                    light,
                     loss,
-                    hunger_org,
-                    saturation_org,
-                    eat_seconds_org,
-                    food_buff.get(),
-                    food_debuff.get(),
-                    hunger_short.get(),
-                    hunger_long.get(),
-                    saturation_short.get(),
-                    saturation_long.get(),
-                    eaten_short.get(),
-                    eaten_long.get(),
                     hunger,
                     saturation,
                     eat_seconds

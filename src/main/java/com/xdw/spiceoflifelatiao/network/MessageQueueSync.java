@@ -1,7 +1,7 @@
 package com.xdw.spiceoflifelatiao.network;
 
 import com.xdw.spiceoflifelatiao.SpiceOfLifeLatiao;
-import com.xdw.spiceoflifelatiao.util.EatHistoryAcessor;
+import com.xdw.spiceoflifelatiao.util.IEatHistoryAcessor;
 import net.minecraft.network.RegistryFriendlyByteBuf;
 import net.minecraft.network.codec.ByteBufCodecs;
 import net.minecraft.network.codec.StreamCodec;
@@ -27,7 +27,7 @@ public record MessageQueueSync(byte[] eatHistory) implements CustomPacketPayload
 
     public static void handle(final MessageQueueSync message, final IPayloadContext ctx) {
         ctx.enqueueWork(() -> {
-            ((EatHistoryAcessor)(ctx.player().getFoodData())).setEatHistory(message.eatHistory());
+            ((IEatHistoryAcessor)(ctx.player().getFoodData())).setEatHistory(message.eatHistory());
         });
     }
 }
