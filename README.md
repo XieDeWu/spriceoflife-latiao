@@ -3,24 +3,40 @@
 继承
 “[生活调味料：经典版](https://www.curseforge.com/minecraft/mc-mods/the-spice-of-life)” ，
 “[MITE](https://www.minecraftforum.net/forums/mapping-and-modding-java-edition/minecraft-mods/1294284-minecraft-is-too-easy-mite-mod)”
-思想，此模组将提高食物消耗，动态计算自然饥饿，食物饱食度，食物饱和度，食用时间。
+思想，此模组偏向难度调整，饮食饥饿曲线将偏向"真实"¿，如下属性将受到动态影响：
 
-本模组的饥饿默认缓动曲线经多次调整优先适用于中短期高难度生存整合包以及长期农夫乐事整合，以及条件适用原版生存。
+### 自然饥饿，食物饱食度，食物饱和度，食用时间
 
-若用于长期原版生存，建议最大历史长度降低一半以上。
+本模组的饥饿默认缓动曲线经多次调整优先适用于中短期高难度生存整合包以及长期农夫乐事整合包，以及条件适用原版生存
+，但普适面较窄，故若遇到平衡性问题需修改配置中的计算公式，所需计算上下文已详细给出。
 
-使用[Exp4j](https://www.objecthunter.net/exp4j/)公式进行计算，本模组仅额外扩展了max与min函数，可用计算上下文将在后文提及，若上下文异常将恢复原版数值。
+若用于长期原版生存，建议最大历史长度降低至一半以下。
 
- [GitHub]()
+使用[Exp4j](https://www.objecthunter.net/exp4j/)公式进行计算，本模组仅额外扩展了max与min函数，若上下文计算异常将恢复原版数值。
+
+本项目为临时起意的实验性项目，初用于个人单机生存。
+因工作原因，作者不承诺长期维护，主版本维护并不会及时，亦无能力进行新旧版本迁移与维护工作。
+
+代码遵循「MIT 协议」，并按原样提供，如急需新旧版本维护或长期使用，自行fork并维护。
+
+[GitHub]()
+[Curseforge]()
+[Modrinth]()
 
 ### 默认自然饥饿公式 LOSS：
-#### 固定系数、饥饿程度、短期营养、短期摄入、过饱和、TODO：盔甲值，亮度，潮湿，雨强，方块速度系数，玩家增益数，玩家减益数，跳夜、额外调整
+#### 固定系数、饥饿程度、短期营养、短期摄入、过饱和、盔甲值、亮度、湿漉、方块速度系数，玩家状态
 ```text
 LOSS = 0.005
-*(2^(HUNGER_LEVEL/10-1))
-*(0.5^(SUM_SATURATION_SHORT/max(SUM_HUNGER_SHORT,1)-1))
-*(2^((SUM_SATURATION_SHORT+SUM_HUNGER_SHORT)/128 -1))
+*2^(HUNGER_LEVEL/20-1)
+*0.5^(SUM_SATURATION_SHORT/max(SUM_HUNGER_SHORT,1)-1)
+*2^((SUM_SATURATION_SHORT+SUM_HUNGER_SHORT)/128 -1)
 *(1+2^(SATURATION_LEVEL/4-4)-0.0625)
+*(1+(ARMOR/20)^2.41)
+*(1.5-0.5*LIGHT/15)
+*(1+0.5*IS_WET*(IS_WET+RAIN_LEVEL+THUNDER_LEVEL))
+*(2-BLOCK_SPEED_FACTOR)
+*0.8^PLAYER_BUFF
+*1.5^PLAYER_DEBUFF
 ```
 ### 默认饱食度公式 HUNGER：
 #### 短期饮食、饥饿程度、长期饮食、最低点
@@ -54,6 +70,14 @@ SUM_HUNGER_SHORT 玩家饱食短期累计
 SUM_HUNGER_LONG 玩家饱食长期累计
 SUM_SATURATION_SHORT 玩家饱和短期累计
 SUM_SATURATION_LONG 玩家饱和长期累计
+ARMOR 玩家盔甲值
+LIGHT 光照
+IS_WET 是否湿漉
+RAIN_LEVEL 下雨强度
+THUNDER_LEVEL 雷雨强度
+BLOCK_SPEED_FACTOR 方块速度系数
+PLAYER_BUFF 玩家增益数
+PLAYER_DEBUFF 玩家减益数
 LOSS 自然饥饿
 HUNGER_ORG 食物原饱食度
 SATURATION_ORG 食物原饱和度
@@ -72,10 +96,5 @@ EAT_SECONDS 食物食用时间
 ```
 ### TODO
 ```text
-手持物品亮度
-玩家处于雨雪中
-玩家处于水中
-PLAYER_BUFF 玩家增益数
-PLAYER_DEBUFF 玩家减益数
 跳夜惩罚
 ```

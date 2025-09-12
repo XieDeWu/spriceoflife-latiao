@@ -16,12 +16,20 @@ public class Config {
             .comment("SUM_HUNGER_LONG 玩家饱食长期累计")
             .comment("SUM_SATURATION_SHORT 玩家饱和短期累计")
             .comment("SUM_SATURATION_LONG 玩家饱和长期累计")
+            .comment("ARMOR 玩家盔甲值")
+            .comment("LIGHT 光照")
+            .comment("IS_WET 是否湿漉")
+            .comment("RAIN_LEVEL 下雨强度")
+            .comment("THUNDER_LEVEL 雷雨强度")
+            .comment("BLOCK_SPEED_FACTOR 方块速度系数")
+            .comment("PLAYER_BUFF 玩家增益数")
+            .comment("PLAYER_DEBUFF 玩家减益数")
             .comment("LOSS 自然饥饿")
             .comment("HUNGER_ORG 食物原饱食度")
             .comment("SATURATION_ORG 食物原饱和度")
             .comment("EAT_SECONDS_ORG 食物原食用时间")
-            .comment("BUFF 食物可能增益数")
-            .comment("DEBUFF 食物可能减益数")
+            .comment("FOOD_BUFF 食物可能增益数")
+            .comment("FOOD_DEBUFF 食物可能减益数")
             .comment("HUNGER_SHORT 食物饱食短期累计")
             .comment("HUNGER_LONG 食物饱食长期累计")
             .comment("SATURATION_SHORT 食物饱和短期累计")
@@ -43,10 +51,17 @@ public class Config {
 
     public static final ModConfigSpec.ConfigValue<String> LOSS = BUILDER
             .comment("默认：固定系数、饥饿程度、短期营养、短期摄入、过饱和惩罚")
-            .define("LOSS", "0.005*(2^(HUNGER_LEVEL/10-1))" +
-                    "*(0.5^(SUM_SATURATION_SHORT/max(SUM_HUNGER_SHORT,1)-1))" +
-                    "*(2^((SUM_SATURATION_SHORT+SUM_HUNGER_SHORT)/128 -1))" +
-                    "*(1+2^(SATURATION_LEVEL/4-4)-0.0625)");
+            .define("LOSS", "0.005" +
+                    "*2^(HUNGER_LEVEL/20-1)" +
+                    "*0.5^(SUM_SATURATION_SHORT/max(SUM_HUNGER_SHORT,1)-1)" +
+                    "*2^((SUM_SATURATION_SHORT+SUM_HUNGER_SHORT)/128 -1)" +
+                    "*(1+2^(SATURATION_LEVEL/4-4)-0.0625)" +
+                    "*(1+(ARMOR/20)^2.41)" +
+                    "*(1.5-0.5*LIGHT/15)" +
+                    "*(1+0.5*IS_WET*(IS_WET+RAIN_LEVEL+THUNDER_LEVEL))" +
+                    "*(2-BLOCK_SPEED_FACTOR)" +
+                    "*0.8^PLAYER_BUFF" +
+                    "*1.5^PLAYER_DEBUFF");
 
     public static final ModConfigSpec.ConfigValue<String> HUNGER = BUILDER
         .comment("默认：短期饮食、饥饿程度、长期饮食、最低点")

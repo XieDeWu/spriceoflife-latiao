@@ -1,7 +1,6 @@
 package com.xdw.spiceoflifelatiao.util;
 
 import com.xdw.spiceoflifelatiao.Config;
-import com.xdw.spiceoflifelatiao.mixin.PlayerMixin;
 import net.minecraft.core.component.DataComponents;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.food.FoodData;
@@ -91,6 +90,7 @@ public record EatFormulaContext(
         float light = LevelCalcCached.light;
         float is_wet = player.isInWaterRainOrBubble() ? 1f : 0f;
         float rain_level = LevelCalcCached.rainLevel;
+        float thunder_level = LevelCalcCached.thunderLevel;
         float block_speed_factor = ((IPlayerAcessor) player).getBlockSpeedFactor_public();
         AtomicReference<Float> player_buff = new AtomicReference<>(0f);
         AtomicReference<Float> player_debuff = new AtomicReference<>(0f);
@@ -112,6 +112,7 @@ public record EatFormulaContext(
         context.put("LIGHT",light);
         context.put("IS_WET",is_wet);
         context.put("RAIN_LEVEL",rain_level);
+        context.put("THUNDER_LEVEL",thunder_level);
         context.put("BLOCK_SPEED_FACTOR",block_speed_factor);
         context.put("PLAYER_BUFF",player_buff.get());
         context.put("PLAYER_DEBUFF",player_debuff.get());
