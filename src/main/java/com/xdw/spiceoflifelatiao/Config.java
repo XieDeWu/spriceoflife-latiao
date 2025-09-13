@@ -26,6 +26,7 @@ public class Config {
             .comment("BLOCK_SPEED_FACTOR 方块速度系数")
             .comment("PLAYER_BUFF 玩家增益数")
             .comment("PLAYER_DEBUFF 玩家减益数")
+            .comment("PLAYER_ZZZ 玩家睡眠中")
             .comment("LOSS 自然饥饿")
             .comment("HUNGER_ORG 食物原饱食度")
             .comment("SATURATION_ORG 食物原饱和度")
