@@ -52,7 +52,7 @@ public class Config {
             .defineInRange("historyLengthShort", 16, 0, 1024);
 
     public static final ModConfigSpec.ConfigValue<List<? extends String>> LOSS = BUILDER
-            .comment("默认：固定系数、饥饿程度、短期营养、短期摄入、过饱和、盔甲值、亮度、湿漉、方块速度系数，玩家状态")
+            .comment("默认：固定系数、饥饿程度、短期营养、短期摄入、过饱和、盔甲值、亮度、湿漉、方块速度系数，玩家状态，玩家睡眠中")
             .defineListAllowEmpty("LOSS", List.of("0.005",
                     "*2^(HUNGER_LEVEL/20-1)",
                     "*0.5^(SUM_SATURATION_SHORT/max(SUM_HUNGER_SHORT,1)-1)",
@@ -63,7 +63,8 @@ public class Config {
                     "*(1+0.5*IS_WET*(IS_WET+RAIN_LEVEL+THUNDER_LEVEL))",
                     "*(2-BLOCK_SPEED_FACTOR)",
                     "*0.8^PLAYER_BUFF",
-                    "*1.5^PLAYER_DEBUFF"
+                    "*1.5^PLAYER_DEBUFF",
+                    "*(1-0.4*PLAYER_ZZZ)"
             ),()->"",it->it instanceof String);
 
     public static final ModConfigSpec.ConfigValue<List<? extends String>> HUNGER = BUILDER

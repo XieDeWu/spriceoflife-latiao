@@ -99,6 +99,7 @@ public record EatFormulaContext(
                 case HARMFUL -> player_debuff.updateAndGet(v -> v + 1);
             }
         });
+        float player_zzz = player.isSleeping() ? 1f : 0f;
 
         LinkedHashMap<String, Float> context = new LinkedHashMap<>();
         context.put("HUNGER_LEVEL",hunger_level);
@@ -115,6 +116,7 @@ public record EatFormulaContext(
         context.put("BLOCK_SPEED_FACTOR",block_speed_factor);
         context.put("PLAYER_BUFF",player_buff.get());
         context.put("PLAYER_DEBUFF",player_debuff.get());
+        context.put("PLAYER_ZZZ",player_zzz);
         context.put("HUNGER_ORG",hunger_org);
         context.put("SATURATION_ORG",saturation_org);
         context.put("EAT_SECONDS_ORG",eat_seconds_org);

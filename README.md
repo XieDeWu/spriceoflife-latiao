@@ -1,11 +1,11 @@
 # 生活调味料：辣条版
 ## 概述
-继承
+一个生活调味料系列的生活质量调整Mod，将放缓生活节奏，继承
 “[生活调味料：经典版](https://www.curseforge.com/minecraft/mc-mods/the-spice-of-life)” ，
 “[MITE](https://www.minecraftforum.net/forums/mapping-and-modding-java-edition/minecraft-mods/1294284-minecraft-is-too-easy-mite-mod)”
 思想，此模组偏向难度调整，饮食饥饿曲线将偏向"真实"¿，如下属性将受到动态影响：
 
-### 自然饥饿，食物饱食度，食物饱和度，食用时间
+#### 自然饥饿，饱食度，饱和度，食用时间
 
 本模组的饥饿默认缓动曲线经多次调整优先适用于中短期高难度生存整合包以及长期农夫乐事整合包，以及条件适用原版生存
 ，但普适面较窄，故若遇到平衡性问题需修改配置中的计算公式，所需计算上下文已详细给出。
@@ -17,14 +17,14 @@
 本项目为临时起意的实验性项目，初用于个人单机生存。
 因工作原因，作者不承诺长期维护，主版本维护并不会及时，亦无能力进行新旧版本迁移与维护工作。
 
-代码遵循「MIT 协议」，并按原样提供，如急需新旧版本维护或长期使用，自行fork并维护。
+代码遵循「MIT 协议」，并按原样提供，如急需新旧版本维护或长期使用，自行fork并维护副本，PR请求响应不及时请见谅。
 
-[GitHub]()
+[GitHub](https://github.com/XieDeWu/spriceoflife-latiao.git)
 [Curseforge]()
 [Modrinth]()
 
 ### 默认自然饥饿公式 LOSS：
-#### 固定系数、饥饿程度、短期营养、短期摄入、过饱和、盔甲值、亮度、湿漉、方块速度系数，玩家状态
+#### 固定系数、饥饿程度、短期营养、短期摄入、过饱和、盔甲值、亮度、湿漉、方块速度系数，玩家状态数、玩家睡眠中
 ```text
 LOSS = 0.005
 *2^(HUNGER_LEVEL/20-1)
@@ -37,6 +37,7 @@ LOSS = 0.005
 *(2-BLOCK_SPEED_FACTOR)
 *0.8^PLAYER_BUFF
 *1.5^PLAYER_DEBUFF
+*(1-0.4*PLAYER_ZZZ)
 ```
 ### 默认饱食度公式 HUNGER：
 #### 短期饮食、长期饮食、最低点
@@ -78,6 +79,7 @@ THUNDER_LEVEL 雷雨强度
 BLOCK_SPEED_FACTOR 方块速度系数
 PLAYER_BUFF 玩家增益数
 PLAYER_DEBUFF 玩家减益数
+PLAYER_ZZZ 玩家睡眠中
 LOSS 自然饥饿
 HUNGER_ORG 食物原饱食度
 SATURATION_ORG 食物原饱和度
@@ -93,8 +95,4 @@ EATEN_LONG 食物长期食用数
 HUNGER 食物饱食度
 SATURATION 食物饱和度
 EAT_SECONDS 食物食用时间
-```
-### TODO
-```text
-跳夜惩罚
 ```
