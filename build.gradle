@@ -125,6 +125,7 @@ dependencies {
     }
     additionalRuntimeClasspath "net.objecthunter:exp4j:0.4.8"
     runtimeOnly "squeek.appleskin:appleskin-neoforge:mc1.21-3.0.7"
+    implementation fileTree(dir: "libs",includes: ["*.jar"],excludes: ["*-sources.jar"])
 
     // Example optional mod dependency with JEI
     // The JEI API is declared for compile time use, while the full JEI artifact is used at runtime
