@@ -3,7 +3,7 @@ package com.xdw.spiceoflifelatiao.event;
 import com.xdw.spiceoflifelatiao.Config;
 import com.xdw.spiceoflifelatiao.util.EatFormulaContext;
 import com.xdw.spiceoflifelatiao.util.IEatHistoryAcessor;
-import com.xdw.spiceoflifelatiao.util.LevelCalcCached;
+import com.xdw.spiceoflifelatiao.cached.LevelCalcCached;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
 import net.neoforged.bus.api.SubscribeEvent;

@@ -22,7 +22,7 @@ public abstract class PlayerMixin implements IPlayerAcessor {
     public void injected(Level pLevel, ItemStack pFood, FoodProperties pFoodProperties, CallbackInfoReturnable info) {
         var foodData = this.getFoodData();
         if (!(foodData instanceof IEatHistoryAcessor acessor)) return;
-        acessor.addEatHistory(EatHistory.getFoodHash(pFood.getItem()),pFoodProperties.nutrition()*1.0f,pFoodProperties.saturation());
+        acessor.addEatHistory(EatHistory.getFoodHash(pFood.getItem()),pFoodProperties.nutrition()*1.0f,pFoodProperties.saturation(),1.0f);
     }
 
     @Override

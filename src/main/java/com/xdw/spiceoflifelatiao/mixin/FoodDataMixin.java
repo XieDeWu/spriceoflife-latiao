@@ -1,6 +1,7 @@
 package com.xdw.spiceoflifelatiao.mixin;
 
 import com.xdw.spiceoflifelatiao.Config;
+import com.xdw.spiceoflifelatiao.util.EatFormulaContext;
 import com.xdw.spiceoflifelatiao.util.EatHistory;
 import com.xdw.spiceoflifelatiao.util.IEatHistoryAcessor;
 import net.minecraft.nbt.CompoundTag;
@@ -15,12 +16,14 @@ import java.util.LinkedList;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
+
 @Mixin(FoodData.class)
 public abstract class FoodDataMixin implements IEatHistoryAcessor {
     @Unique private final String eat_history_label = "spiceoflifelatiao:eat_history";
     @Unique private LinkedList<Integer> queueFood = new LinkedList<>();
     @Unique private LinkedList<Float> queueHunger = new LinkedList<>();
     @Unique private LinkedList<Float> queueSaturation = new LinkedList<>();
+    @Unique private LinkedList<Float> queueEaten = new LinkedList<>();
 
     @Inject(at = @At(value = "TAIL"), method = "addAdditionalSaveData(Lnet/minecraft/nbt/CompoundTag;)V")
     public void addAdditionalSaveData(CompoundTag p_38720_, CallbackInfo info) {
@@ -34,26 +37,29 @@ public abstract class FoodDataMixin implements IEatHistoryAcessor {
         }
     }
     @Unique public Optional<byte[]> getEatHistory(){
-        return new EatHistory(queueFood, queueHunger, queueSaturation).toBytes();
+        return new EatHistory(queueFood, queueHunger, queueSaturation,queueEaten).toBytes();
     }
     @Unique public void setEatHistory(byte[] eatHistoryBytes){
         EatHistory.fromBytes(eatHistoryBytes)
-                .filter(x -> x.foodHash() != null && x.hunger() != null && x.saturation() != null )
+                .filter(x -> x.foodHash() != null && x.hunger() != null && x.saturation() != null && x.eaten() != null )
                 .filter(x -> {
                     var length = x.foodHash().size();
-                    return x.hunger().size() == length && x.saturation().size() == length;
+                    return x.hunger().size() == length && x.saturation().size() == length && x.eaten().size() == length;
                 })
                 .ifPresent(eatHistory -> {
                     int length = Config.HISTORY_LENGTH_LONG.get();
-                    queueFood = eatHistory.foodHash().stream().limit(length).collect(Collectors.toCollection(LinkedList::new));
-                    queueHunger = eatHistory.hunger().stream().limit(length).collect(Collectors.toCollection(LinkedList::new));
-                    queueSaturation = eatHistory.saturation().stream().limit(length).collect(Collectors.toCollection(LinkedList::new));
+                    int size = EatFormulaContext.findSumIndex(eatHistory.eaten(),length).orElse(length);
+                    queueFood = eatHistory.foodHash().stream().limit(size).collect(Collectors.toCollection(LinkedList::new));
+                    queueHunger = eatHistory.hunger().stream().limit(size).collect(Collectors.toCollection(LinkedList::new));
+                    queueSaturation = eatHistory.saturation().stream().limit(size).collect(Collectors.toCollection(LinkedList::new));
+                    queueEaten = eatHistory.eaten().stream().limit(size).collect(Collectors.toCollection(LinkedList::new));
                 });
     }
-    @Unique public Optional<byte[]> addEatHistory(Integer foodID,Float hunger,float saturation){
+    @Unique public Optional<byte[]> addEatHistory(Integer foodID,Float hunger,float saturation,float eaten){
         queueFood.addFirst(foodID);
         queueHunger.addFirst(hunger);
         queueSaturation.addFirst(saturation);
+        queueEaten.addFirst(eaten);
         return Optional.empty();
     }
 }

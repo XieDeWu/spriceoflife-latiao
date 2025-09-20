@@ -1,6 +1,7 @@
 package com.xdw.spiceoflifelatiao.util;
 
 import com.xdw.spiceoflifelatiao.Config;
+import com.xdw.spiceoflifelatiao.cached.LevelCalcCached;
 import net.minecraft.core.component.DataComponents;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.food.FoodData;
@@ -26,13 +27,16 @@ public record EatFormulaContext(
 
     public static Optional<EatFormulaContext> from(Player player, ItemStack item){
         var _item = Optional.of(item);
-        int lengthLong = Config.HISTORY_LENGTH_LONG.get();
-        int lengthShort = Math.min(Config.HISTORY_LENGTH_SHORT.get(),lengthLong);
         Optional<Integer> foodHash = _item.map(ItemStack::getItem).map(EatHistory::getFoodHash);
         FoodData foodData = player.getFoodData();
         Optional<EatHistory> eatHistory = ((IEatHistoryAcessor)foodData)
                 .getEatHistory()
                 .flatMap(EatHistory::fromBytes);
+        int _lengthLong = Config.HISTORY_LENGTH_LONG.get();
+        int lengthLong = eatHistory.flatMap(x -> findSumIndex(x.eaten(), _lengthLong)).orElse(_lengthLong);
+        int _lengthShort = Config.HISTORY_LENGTH_SHORT.get();
+        int __lengthShort = eatHistory.flatMap(x -> findSumIndex(x.eaten(), _lengthShort)).orElse(_lengthShort);
+        int lengthShort = Math.min(__lengthShort,lengthLong);
         Optional<FoodProperties> foodProperties = _item.flatMap(x-> Optional.ofNullable(x.get(DataComponents.FOOD)));
         Float hunger_level = (float) foodData.getFoodLevel();
         Float saturation_level = foodData.getSaturationLevel();
@@ -57,13 +61,14 @@ public record EatFormulaContext(
         AtomicReference<Float> saturation_long = new AtomicReference<>(0f);
         AtomicReference<Float> eaten_short = new AtomicReference<>(0f);
         AtomicReference<Float> eaten_long = new AtomicReference<>(0f);
-        record Tuple(int index, int foodHash, float hunger, float saturation) {}
+        record Tuple(int index, int foodHash, float hunger, float saturation,float eaten) {}
         eatHistory.stream()
                 .flatMap(eh -> {
                     List<Integer> foods = eh.foodHash();
                     List<Float> hungers = eh.hunger();
                     List<Float> saturations = eh.saturation();
-                    return IntStream.range(0, foods.size()).mapToObj(i -> new Tuple(i, foods.get(i),hungers.get(i),saturations.get(i)));
+                    List<Float> eatens = eh.eaten();
+                    return IntStream.range(0, foods.size()).mapToObj(i -> new Tuple(i, foods.get(i),hungers.get(i),saturations.get(i),eatens.get(i)));
                 })
                 .filter(tuple->tuple.index < lengthLong)
                 .peek(it->{
@@ -74,15 +79,15 @@ public record EatFormulaContext(
                         sum_saturation_short.updateAndGet(v -> v + it.saturation);
                     }
                 })
-                .filter(tuple -> foodHash.isPresent() && tuple.foodHash == foodHash.get()) // 使用索引过滤
+                .filter(tuple -> tuple.foodHash == foodHash.get()) // 使用索引过滤
                 .forEach(it -> {
                     hunger_long.updateAndGet(v -> v + it.hunger);
                     saturation_long.updateAndGet(v -> v + it.saturation);
-                    eaten_long.updateAndGet(v -> v + 1f);
+                    eaten_long.updateAndGet(v -> v + it.eaten);
                     if(it.index < lengthShort) {
                         hunger_short.updateAndGet(v -> v + it.hunger);
                         saturation_short.updateAndGet(v -> v + it.saturation);
-                        eaten_short.updateAndGet(v -> v + 1f);
+                        eaten_short.updateAndGet(v -> v + it.eaten);
                     }
                 });
         float armor = player.getArmorValue();
@@ -165,5 +170,16 @@ public record EatFormulaContext(
         Expression build = exp.build();
         context.keySet().forEach(it-> build.setVariable(it,context.get(it)));
         return build;
+    }
+
+    public static Optional<Integer> findSumIndex(List<Float> arr, float target) {
+        float sum = 0;
+        for (int i = 0; i < arr.size(); i++) {
+            sum += arr.get(i);
+            if (sum >= target) {
+                return Optional.of(i);
+            }
+        }
+        return Optional.empty();
     }
 }
