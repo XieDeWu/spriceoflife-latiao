@@ -31,6 +31,7 @@ public abstract class FoodDataMixin implements IEatHistoryAcessor {
     @Unique private LinkedList<Float> queueHunger = new LinkedList<>();
     @Unique private LinkedList<Float> queueSaturation = new LinkedList<>();
     @Unique private LinkedList<Float> queueEaten = new LinkedList<>();
+    @Unique private float hungerRoundErr = 0;
     @Shadow private int foodLevel;
     @Shadow private float saturationLevel;
     @Inject(at = @At(value = "TAIL"), method = "addAdditionalSaveData(Lnet/minecraft/nbt/CompoundTag;)V")
@@ -52,19 +53,23 @@ public abstract class FoodDataMixin implements IEatHistoryAcessor {
         AtomicReference<Float> saturation = new AtomicReference<>(saturationLevel);
         BlockBehaviourCached.foodUpd(foodLevel,saturationLevel);
         BlockBehaviourCached.getContext().ifPresent(x->{
-            hunger.set(new BigDecimal(x.hunger()).setScale(0, RoundingMode.HALF_EVEN).intValue());
+            var expectHunger = x.hunger()+x.hungerAccRoundErr();
+            hunger.set(new BigDecimal(expectHunger).setScale(0, RoundingMode.HALF_EVEN).intValue());
             saturation.set(x.saturation());
+            BlockBehaviourCached.realHunger = Optional.of(hunger.get());
+            BlockBehaviourCached.realSaturation = Optional.of(x.saturation());
+            BlockBehaviourCached.hungerRoundErr = Optional.of(expectHunger - hunger.get());
         });
         this.foodLevel = Mth.clamp(hunger.get() + this.foodLevel, 0, 20);
         this.saturationLevel = Mth.clamp(saturation.get() + this.saturationLevel, 0.0F, (float)this.foodLevel);
     }
 
     @Unique public Optional<byte[]> getEatHistory(){
-        return new EatHistory(queueFood, queueHunger, queueSaturation,queueEaten).toBytes();
+        return new EatHistory(queueFood, queueHunger, queueSaturation,queueEaten, hungerRoundErr).toBytes();
     }
     @Unique public void setEatHistory(byte[] eatHistoryBytes){
         EatHistory.fromBytes(eatHistoryBytes)
-                .filter(x -> x.foodHash() != null && x.hunger() != null && x.saturation() != null && x.eaten() != null )
+                .filter(x -> x.foodHash() != null && x.hunger() != null && x.saturation() != null && x.eaten() != null && x.hungerRoundErr() != null )
                 .filter(x -> {
                     var length = x.foodHash().size();
                     return x.hunger().size() == length && x.saturation().size() == length && x.eaten().size() == length;
@@ -76,13 +81,15 @@ public abstract class FoodDataMixin implements IEatHistoryAcessor {
                     queueHunger = eatHistory.hunger().stream().limit(size).collect(Collectors.toCollection(LinkedList::new));
                     queueSaturation = eatHistory.saturation().stream().limit(size).collect(Collectors.toCollection(LinkedList::new));
                     queueEaten = eatHistory.eaten().stream().limit(size).collect(Collectors.toCollection(LinkedList::new));
+                    hungerRoundErr = eatHistory.hungerRoundErr();
                 });
     }
-    @Unique public Optional<byte[]> addEatHistory(Integer foodID,Float hunger,float saturation,float eaten){
+    @Unique public Optional<byte[]> addEatHistory(Integer foodID,Float hunger,float saturation,float eaten,float hungerRoundErr){
         queueFood.addFirst(foodID);
         queueHunger.addFirst(hunger);
         queueSaturation.addFirst(saturation);
         queueEaten.addFirst(eaten);
+        this.hungerRoundErr = hungerRoundErr;
         return Optional.empty();
     }
 }

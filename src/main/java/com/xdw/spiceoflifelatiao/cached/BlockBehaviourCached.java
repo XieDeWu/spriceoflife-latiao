@@ -17,23 +17,35 @@ public class BlockBehaviourCached {
     public static Optional<ItemStack> item = Optional.empty();
     public static Optional<Integer> bites = Optional.empty();
     private static Optional<EatFormulaContext> context = Optional.empty();
+    public static Optional<Integer> realHunger = Optional.empty();
+    public static Optional<Float> realSaturation = Optional.empty();
+    public static Optional<Float> hungerRoundErr = Optional.empty();
     public static void start(Optional<Player> _player,Optional<ItemStack> _item){
         flag = true;
         player = _player;
         item = _item;
     }
     public static void end(){
-        if (player.isPresent() && item.isPresent() && bites.isPresent() && context.isPresent()){
-            if (player.get().getFoodData() instanceof IEatHistoryAcessor ac) {
-                int hash = EatHistory.getFoodHash(item.get().getItem());
-                ac.addEatHistory(hash, context.get().hunger(), context.get().saturation(), 1.0f/(float)bites.get());
-            }
+        if (player.isPresent()
+                && item.isPresent()
+                && bites.isPresent()
+                && context.isPresent()
+                && realHunger.isPresent()
+                && realSaturation.isPresent()
+                && hungerRoundErr.isPresent()
+                && player.get().getFoodData() instanceof IEatHistoryAcessor ac
+        ){
+            int hash = EatHistory.getFoodHash(item.get().getItem());
+            ac.addEatHistory(hash, (float)realHunger.get(), realSaturation.get(), 1.0f/(float)bites.get(), hungerRoundErr.get());
         }
         flag = false;
         player = Optional.empty();
         item = Optional.empty();
         bites = Optional.empty();
         context = Optional.empty();
+        realHunger = Optional.empty();
+        realSaturation = Optional.empty();
+        hungerRoundErr = Optional.empty();
     }
     public static Optional<EatFormulaContext> getContext(){
         if (context.isPresent()) return context;
@@ -53,9 +65,7 @@ public class BlockBehaviourCached {
                     old.map(FoodProperties::eatSeconds).orElse(1.6f),
                     old.flatMap(FoodProperties::usingConvertsTo),
                     old.map(FoodProperties::effects).orElse(List.of())
-                    )
-            );
+            ));
         });
-
     }
 }

@@ -22,7 +22,8 @@ public record EatFormulaContext(
         @NotNull Float loss,
         @NotNull Float hunger,
         @NotNull Float saturation,
-        @NotNull Float eat_seconds
+        @NotNull Float eat_seconds,
+        @NotNull Float hungerAccRoundErr
 ) {
 
     public static Optional<EatFormulaContext> from(Player player, ItemStack item){
@@ -145,7 +146,8 @@ public record EatFormulaContext(
                     loss,
                     hunger,
                     saturation,
-                    eat_seconds
+                    eat_seconds,
+                    eatHistory.map(EatHistory::hungerRoundErr).orElse(0f)
             ));
         } catch (Exception e) {
             return Optional.empty();

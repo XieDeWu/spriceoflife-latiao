@@ -8,7 +8,7 @@ import java.io.*;
 import java.util.LinkedList;
 import java.util.Optional;
 
-public record EatHistory(LinkedList<Integer> foodHash, LinkedList<Float> hunger,LinkedList<Float> saturation,LinkedList<Float> eaten) implements Serializable  {
+public record EatHistory(LinkedList<Integer> foodHash, LinkedList<Float> hunger,LinkedList<Float> saturation,LinkedList<Float> eaten,Float hungerRoundErr) implements Serializable  {
     @Serial private static final long serialVersionUID = 100L;
     public static Optional<Player> recentPlayer = Optional.empty();
     public Optional<byte[]> toBytes() {
