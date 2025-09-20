@@ -3,9 +3,11 @@
   "package": "com.xdw.spiceoflifelatiao.mixin",
   "compatibilityLevel": "JAVA_21",
   "mixins": [
+    "BlockStateBaseMixin",
     "FoodDataMixin",
     "IItemExtensionMixin",
-    "PlayerMixin"
+    "PlayerMixin",
+    "StateHolderMixin"
   ],
   "injectors": {
     "defaultRequire": 1
