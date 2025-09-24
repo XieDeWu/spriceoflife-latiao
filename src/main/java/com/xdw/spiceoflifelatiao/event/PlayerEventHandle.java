@@ -21,12 +21,7 @@ public class PlayerEventHandle {
 
         LevelCalcCached.update(player);
     }
-    @SubscribeEvent
-    public static void onPlayerClone(PlayerEvent.Clone event){
-        if(!event.isWasDeath()) return;
-        if(!(event.getOriginal().getFoodData() instanceof IEatHistoryAcessor old) || !(event.getEntity().getFoodData() instanceof IEatHistoryAcessor neo )) return;
-        old.getEatHistory().ifPresent(neo::setEatHistory);
-    }
+
     private static long time = 0;
     private static float loss = 0f;
     @SubscribeEvent
