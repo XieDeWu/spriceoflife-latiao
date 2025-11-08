@@ -45,7 +45,7 @@ public class SyncHandler {
         syncEatHistory(event.getEntity(),Optional.empty());
     }
 
-    private static void syncEatHistory(Player _oldPlayer, Optional<Player> _newPlayer) {
+    public static void syncEatHistory(Player _oldPlayer, Optional<Player> _newPlayer) {
         _newPlayer.ifPresent(x->{
             if(!(_oldPlayer.getFoodData() instanceof IEatHistoryAcessor old) || !(x.getFoodData() instanceof IEatHistoryAcessor neo )) return;
             old.getEatHistory().ifPresent(neo::setEatHistory);

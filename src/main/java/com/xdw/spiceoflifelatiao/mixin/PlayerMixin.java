@@ -1,9 +1,11 @@
 package com.xdw.spiceoflifelatiao.mixin;
 
+import com.xdw.spiceoflifelatiao.network.SyncHandler;
 import com.xdw.spiceoflifelatiao.util.EatFormulaContext;
 import com.xdw.spiceoflifelatiao.util.EatHistory;
 import com.xdw.spiceoflifelatiao.util.IEatHistoryAcessor;
 import com.xdw.spiceoflifelatiao.util.IPlayerAcessor;
+import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.food.FoodData;
 import net.minecraft.world.food.FoodProperties;
@@ -25,8 +27,14 @@ import java.util.concurrent.atomic.AtomicReference;
 public abstract class PlayerMixin implements IPlayerAcessor {
     @Shadow public abstract FoodData getFoodData();
     @Shadow protected abstract float getBlockSpeedFactor();
+
+    @Shadow
+    public float oBob;
+
     @Inject(at = @At(value = "TAIL"), method = "eat")
     public void injected(Level pLevel, ItemStack pFood, FoodProperties pFoodProperties, CallbackInfoReturnable info) {
+        int count = pFood.getCount();
+        pFood.setCount(1);
         var foodData = this.getFoodData();
         if (!(foodData instanceof IEatHistoryAcessor acessor)) return;
         Optional<EatFormulaContext> from = EatFormulaContext.from((Player) (Object) this, pFood);
@@ -41,6 +49,10 @@ public abstract class PlayerMixin implements IPlayerAcessor {
 
         });
         acessor.addEatHistory(EatHistory.getFoodHash(pFood.getItem()),realHunger.get()*1.0f,pFoodProperties.saturation(),1.0f,newRoundErr.get());
+        pFood.setCount(count);
+        if ((Object)this instanceof ServerPlayer player){
+            SyncHandler.syncEatHistory(player,Optional.empty());
+        }
     }
 
     @Override
