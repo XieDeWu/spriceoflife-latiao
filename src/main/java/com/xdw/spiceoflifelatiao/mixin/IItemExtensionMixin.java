@@ -29,6 +29,8 @@ public interface IItemExtensionMixin {
     @Overwrite
     @Nullable // read javadoc to find a potential problem
     default FoodProperties getFoodProperties(ItemStack stack, @Nullable LivingEntity entity) {
+        int count = stack.getCount();
+        stack.setCount(Math.max(1,stack.getCount()));
         var food = stack.get(DataComponents.FOOD);
         if(food == null) return null;
         if(!Config.EANBLE_CHANGE.get()) return food;
@@ -44,6 +46,7 @@ public interface IItemExtensionMixin {
         boolean canAlwaysEat = food.canAlwaysEat();
         Optional<ItemStack> usingConvertsTo = food.usingConvertsTo();
         List<FoodProperties.PossibleEffect> effects = food.effects();
+        stack.setCount(count);
         return new FoodProperties(nutrition.get(), saturation.get(),canAlwaysEat, eatSeconds.get(),usingConvertsTo,effects);
     }
 }
