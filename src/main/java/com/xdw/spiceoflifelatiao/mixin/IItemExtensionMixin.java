@@ -29,8 +29,6 @@ public interface IItemExtensionMixin {
     @Overwrite
     @Nullable // read javadoc to find a potential problem
     default FoodProperties getFoodProperties(ItemStack stack, @Nullable LivingEntity entity) {
-        int count = stack.getCount();
-        stack.setCount(Math.max(1,stack.getCount()));
         var food = stack.get(DataComponents.FOOD);
         if(food == null) return null;
         if(!Config.EANBLE_CHANGE.get()) return food;
@@ -38,6 +36,8 @@ public interface IItemExtensionMixin {
         AtomicInteger nutrition = new AtomicInteger(food.nutrition());
         AtomicReference<Float> saturation = new AtomicReference<>(food.saturation());
         AtomicReference<Float> eatSeconds = new AtomicReference<>(food.eatSeconds());
+        int count = stack.getCount();
+        stack.setCount(Math.max(1,stack.getCount()));
         EatHistory.recentPlayer.flatMap(rp -> EatFormulaContext.from(rp, stack)).ifPresent(x -> {
             nutrition.set(new BigDecimal(x.hunger()+x.hungerAccRoundErr()).setScale(0, RoundingMode.HALF_EVEN).intValue());
             saturation.set(x.saturation());
