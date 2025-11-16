@@ -33,10 +33,10 @@ public abstract class PlayerMixin implements IPlayerAcessor {
 
     @Inject(at = @At(value = "TAIL"), method = "eat")
     public void injected(Level pLevel, ItemStack pFood, FoodProperties pFoodProperties, CallbackInfoReturnable info) {
-        int count = pFood.getCount();
-        pFood.setCount(1);
         var foodData = this.getFoodData();
         if (!(foodData instanceof IEatHistoryAcessor acessor)) return;
+        int count = pFood.getCount();
+        pFood.setCount(1);
         Optional<EatFormulaContext> from = EatFormulaContext.from((Player) (Object) this, pFood);
         AtomicInteger realHunger = new AtomicInteger(pFoodProperties.nutrition());
         AtomicReference<Float> newRoundErr = new AtomicReference<>(0f);
