@@ -32,17 +32,19 @@ public interface IItemExtensionMixin {
         var food = stack.get(DataComponents.FOOD);
         if(food == null) return null;
         if(!Config.EANBLE_CHANGE.get()) return food;
-        if(entity instanceof Player player) EatHistory.recentPlayer = Optional.of(player);
+        if(entity != null) EatHistory.recentEntity = Optional.of(entity);
         AtomicInteger nutrition = new AtomicInteger(food.nutrition());
         AtomicReference<Float> saturation = new AtomicReference<>(food.saturation());
         AtomicReference<Float> eatSeconds = new AtomicReference<>(food.eatSeconds());
         int count = stack.getCount();
         stack.setCount(Math.max(1,stack.getCount()));
-        EatHistory.recentPlayer.flatMap(rp -> EatFormulaContext.from(rp, stack)).ifPresent(x -> {
-            nutrition.set(new BigDecimal(x.hunger()+x.hungerAccRoundErr()).setScale(0, RoundingMode.HALF_EVEN).intValue());
-            saturation.set(x.saturation());
-            eatSeconds.set(x.eat_seconds());
-        });
+        EatHistory.recentEntity
+                .map(x-> x instanceof Player p ? p : null)
+                .flatMap(rp -> EatFormulaContext.from(rp, stack)).ifPresent(x -> {
+                    nutrition.set(new BigDecimal(x.hunger()+x.hungerAccRoundErr()).setScale(0, RoundingMode.HALF_EVEN).intValue());
+                    saturation.set(x.saturation());
+                    eatSeconds.set(x.eat_seconds());
+                });
         boolean canAlwaysEat = food.canAlwaysEat();
         Optional<ItemStack> usingConvertsTo = food.usingConvertsTo();
         List<FoodProperties.PossibleEffect> effects = food.effects();

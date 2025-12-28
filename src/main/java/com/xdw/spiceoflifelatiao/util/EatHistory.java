@@ -1,6 +1,6 @@
 package com.xdw.spiceoflifelatiao.util;
 
-import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.item.Item;
 import org.jetbrains.annotations.NotNull;
 
@@ -10,7 +10,7 @@ import java.util.Optional;
 
 public record EatHistory(LinkedList<Integer> foodHash, LinkedList<Float> hunger,LinkedList<Float> saturation,LinkedList<Float> eaten,Float hungerRoundErr) implements Serializable  {
     @Serial private static final long serialVersionUID = 100L;
-    public static Optional<Player> recentPlayer = Optional.empty();
+    public static Optional<LivingEntity> recentEntity = Optional.empty();
     public Optional<byte[]> toBytes() {
         try (ByteArrayOutputStream a = new ByteArrayOutputStream();
              ObjectOutputStream b = new ObjectOutputStream(a)) {
