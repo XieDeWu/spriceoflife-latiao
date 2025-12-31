@@ -7,7 +7,8 @@
     "FoodDataMixin",
     "IItemExtensionMixin",
     "PlayerMixin",
-    "StateHolderMixin"
+    "StateHolderMixin",
+    "linkage.FoodContainerItemMixin"
   ],
   "injectors": {
     "defaultRequire": 1
