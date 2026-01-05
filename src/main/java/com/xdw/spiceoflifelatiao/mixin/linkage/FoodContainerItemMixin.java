@@ -37,9 +37,12 @@ public abstract class FoodContainerItemMixin implements IFoodItem {
         if(!(entity instanceof Player player)) return;
         if(handler == null || bestFoodSlot == null){
             handler = getInventory(stack);
+            if(handler == null) return;
             bestFoodSlot = getBestFoodSlot(handler, player);
+            if(bestFoodSlot < 0) return;
             ItemStack bestFood = handler.getStackInSlot(bestFoodSlot);
-            FoodProperties foodProperties = bestFood.getFoodProperties(entity);
+            if(bestFood == null || bestFood.isEmpty()) return;
+            FoodProperties foodProperties = bestFood.getFoodProperties(player);
             duration = foodProperties != null ? foodProperties.eatDurationTicks() : cir.getReturnValue();
         }
         cir.setReturnValue(duration);

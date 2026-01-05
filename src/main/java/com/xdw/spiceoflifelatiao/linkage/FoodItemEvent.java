@@ -5,12 +5,17 @@ import net.neoforged.neoforge.event.entity.living.LivingEntityUseItemEvent;
 
 public class FoodItemEvent {
     @SubscribeEvent
-    public static void onStopUsingItem(LivingEntityUseItemEvent.Stop event) {
+    public static void onUsingItem(LivingEntityUseItemEvent.Start event) {
         if(!(event.getItem().getItem() instanceof IFoodItem fi)) return;
         fi.initState();
     }
     @SubscribeEvent
-    public static void onStopUsingItem(LivingEntityUseItemEvent.Finish event) {
+    public static void onUsingItem(LivingEntityUseItemEvent.Stop event) {
+        if(!(event.getItem().getItem() instanceof IFoodItem fi)) return;
+        fi.initState();
+    }
+    @SubscribeEvent
+    public static void onUsingItem(LivingEntityUseItemEvent.Finish event) {
         if(!(event.getItem().getItem() instanceof IFoodItem fi)) return;
         fi.initState();
     }
