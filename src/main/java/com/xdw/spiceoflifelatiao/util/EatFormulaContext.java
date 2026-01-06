@@ -1,6 +1,7 @@
 package com.xdw.spiceoflifelatiao.util;
 
 import com.xdw.spiceoflifelatiao.Config;
+import com.xdw.spiceoflifelatiao.cached.EatFormulaCalcCached;
 import com.xdw.spiceoflifelatiao.cached.LevelCalcCached;
 import net.minecraft.core.component.DataComponents;
 import net.minecraft.world.entity.player.Player;
@@ -27,6 +28,36 @@ public record EatFormulaContext(
 ) {
 
     public static Optional<EatFormulaContext> from(Player player, ItemStack item){
+        return EatFormulaCalcCached.getCached(player,item).or(()->{
+            var value = EatFormulaContext.calc(player, item);
+            value = configLimit(value,item);
+            EatFormulaCalcCached.addCached(player,item,value);
+            return value;
+        });
+    }
+    public static Optional<EatFormulaContext> configLimit(Optional<EatFormulaContext> value,ItemStack itemStack){
+        if(value.isEmpty()) return value;
+        var v = value.get();
+        float loss = Config.EANBLE_LOSS.get() ? v.loss : 0f;
+        float hunger = 0f;
+        float saturation = 0f;
+        float eat_seconds = 1.6f;
+        if(itemStack != null && itemStack.get(DataComponents.FOOD) instanceof FoodProperties pro){
+            hunger = Config.EANBLE_HUNGER.get() ? v.hunger : pro.nutrition();
+            saturation = Config.EANBLE_SATURATION.get() ? v.saturation : pro.saturation();
+            eat_seconds = Config.EANBLE_EAT_SECONDS.get() ? v.eat_seconds : pro.eatSeconds();
+        }
+        return Optional.of(new EatFormulaContext(
+                loss,
+                hunger,
+                saturation,
+                eat_seconds,
+                v.hungerAccRoundErr
+        ));
+    }
+
+    public static Optional<EatFormulaContext> calc(Player player, ItemStack item){
+
         var _item = Optional.of(item);
         Optional<Integer> foodHash = _item.map(ItemStack::getItem).map(EatHistory::getFoodHash);
         FoodData foodData = player.getFoodData();

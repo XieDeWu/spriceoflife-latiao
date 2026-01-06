@@ -44,6 +44,20 @@ public class Config {
             .comment("EAT_SECONDS 食物食用时间")
             .define("enable_change",true);
 
+    public static final ModConfigSpec.ConfigValue<Boolean> EANBLE_LOSS = BUILDER
+            .comment("启用自然饥饿调整")
+            .define("enable_loss",true);
+
+    public static final ModConfigSpec.ConfigValue<Boolean> EANBLE_HUNGER = BUILDER
+            .comment("启用饥饿值调整")
+            .define("enable_hunger",true);
+    public static final ModConfigSpec.ConfigValue<Boolean> EANBLE_SATURATION = BUILDER
+            .comment("启用饱和度调整")
+            .define("enable_saturation",true);
+    public static final ModConfigSpec.ConfigValue<Boolean> EANBLE_EAT_SECONDS = BUILDER
+            .comment("启用食用时间调整")
+            .define("enable_eat_seconds",true);
+
     public static final ModConfigSpec.ConfigValue<Integer> HISTORY_LENGTH_LONG = BUILDER
             .comment("用于统计长期饮食数据")
             .defineInRange("historyLengthLong", 512, 0, 4096);

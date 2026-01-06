@@ -1,7 +1,6 @@
 package com.xdw.spiceoflifelatiao.mixin;
 
 import com.xdw.spiceoflifelatiao.Config;
-import com.xdw.spiceoflifelatiao.cached.EatFormualCalcCached;
 import com.xdw.spiceoflifelatiao.util.EatFormulaContext;
 import com.xdw.spiceoflifelatiao.util.EatHistory;
 import net.minecraft.core.component.DataComponents;
@@ -41,11 +40,7 @@ public interface IItemExtensionMixin {
         stack.setCount(Math.max(1,stack.getCount()));
         EatHistory.recentEntity
                 .map(x-> x instanceof Player p ? p : null)
-                .flatMap(rp -> EatFormualCalcCached.getCached(rp,stack).or(()->{
-                    var value = EatFormulaContext.from(rp, stack);
-                    EatFormualCalcCached.addCached(rp,stack,value);
-                    return value;
-                }))
+                .flatMap(rp -> EatFormulaContext.from(rp, stack))
                 .ifPresent(x -> {
                     nutrition.set(new BigDecimal(x.hunger()+x.hungerAccRoundErr()).setScale(0, RoundingMode.HALF_EVEN).intValue());
                     saturation.set(x.saturation());

@@ -1,5 +1,9 @@
 {
   "spiceoflifelatiao.configuration.enable_change": "Enable_Change",
+  "spiceoflifelatiao.configuration.enable_loss": "Enable_Loss",
+  "spiceoflifelatiao.configuration.enable_hunger": "Enable_Hunger",
+  "spiceoflifelatiao.configuration.enable_saturation": "Enable_Saturation",
+  "spiceoflifelatiao.configuration.enable_eat_seconds": "Enable_Eat_Seconds",
   "spiceoflifelatiao.configuration.historyLengthLong": "HistoryLengthLong",
   "spiceoflifelatiao.configuration.historyLengthShort": "HistoryLengthShort",
   "spiceoflifelatiao.configuration.LOSS": "LOSS",

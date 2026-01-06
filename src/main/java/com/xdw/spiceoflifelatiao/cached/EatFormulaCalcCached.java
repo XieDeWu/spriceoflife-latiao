@@ -8,8 +8,8 @@ import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Optional;
 
-public class EatFormualCalcCached {
-    private static final FifoHashMap<String,Optional<EatFormulaContext>> values = new FifoHashMap<>(24);
+public class EatFormulaCalcCached {
+    private static final FifoHashMap<String,Optional<EatFormulaContext>> values = new FifoHashMap<>(64);
 
     public static void addCached(Player player, ItemStack stack, Optional<EatFormulaContext> value){
         if(player == null || stack == null) return;
@@ -20,7 +20,12 @@ public class EatFormualCalcCached {
         return values.getOrDefault(getID(player,stack),Optional.empty());
     }
     private static String getID(Player player,ItemStack stack){
-        return player.hashCode() + ":" + stack.getItem().hashCode()+":"+player.level().getGameTime();
+        var play = player.getStringUUID().hashCode();
+//        var hunger = player.getFoodData().getFoodLevel();
+//        var saturation = player.getFoodData().getSaturationLevel();
+        var item = stack.getItem().toString().replace(" ", "").hashCode();
+        var gap = player.level().getGameTime()/20;
+        return play + ":" + item + ":" + gap;
     }
 
     static class FifoHashMap<K, V> extends LinkedHashMap<K, V> {
