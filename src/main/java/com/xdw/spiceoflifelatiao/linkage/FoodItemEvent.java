@@ -9,14 +9,4 @@ public class FoodItemEvent {
         if(!(event.getItem().getItem() instanceof IFoodItem fi)) return;
         fi.initState();
     }
-    @SubscribeEvent
-    public static void onUsingItem(LivingEntityUseItemEvent.Stop event) {
-        if(!(event.getItem().getItem() instanceof IFoodItem fi)) return;
-        fi.initState();
-    }
-    @SubscribeEvent
-    public static void onUsingItem(LivingEntityUseItemEvent.Finish event) {
-        if(!(event.getItem().getItem() instanceof IFoodItem fi)) return;
-        fi.initState();
-    }
 }

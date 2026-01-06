@@ -1,6 +1,8 @@
 package com.xdw.spiceoflifelatiao.mixin.linkage;
 
 import com.xdw.spiceoflifelatiao.linkage.IFoodItem;
+import net.minecraft.client.player.LocalPlayer;
+import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.food.FoodProperties;
@@ -34,12 +36,12 @@ public abstract class FoodContainerItemMixin implements IFoodItem {
             remap = false
     )
     private void getUseDuration(ItemStack stack, LivingEntity entity, CallbackInfoReturnable<Integer> cir) {
-        if(!(entity instanceof Player player)) return;
+        if(!(entity instanceof ServerPlayer player)) return;
         if(handler == null || bestFoodSlot == null){
             handler = getInventory(stack);
             if(handler == null) return;
             bestFoodSlot = getBestFoodSlot(handler, player);
-            if(bestFoodSlot < 0) return;
+            if(bestFoodSlot == null || bestFoodSlot < 0) return;
             ItemStack bestFood = handler.getStackInSlot(bestFoodSlot);
             if(bestFood == null || bestFood.isEmpty()) return;
             FoodProperties foodProperties = bestFood.getFoodProperties(player);

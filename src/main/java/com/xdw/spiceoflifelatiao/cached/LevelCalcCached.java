@@ -25,6 +25,11 @@ public class LevelCalcCached {
         double day = dayTime * Math.PI * 2;
         double night = day + Math.PI;
         float baseSkyLight = level.getBrightness(LightLayer.SKY, player.blockPosition());
+        if(!level.canSeeSky(player.blockPosition())){
+            float scale = 1/(16-baseSkyLight);
+            rainLevel *= scale;
+            thunderLevel *= scale;
+        }
         float skyLight = (float) (baseSkyLight / (1+rainLevel+thunderLevel) * Math.max(Math.sin(day),0.6 * level.getMoonBrightness() *Math.sin(night)));
 
         float blockLight = level.getBrightness(LightLayer.BLOCK, player.blockPosition());

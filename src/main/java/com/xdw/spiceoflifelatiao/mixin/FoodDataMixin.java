@@ -90,6 +90,13 @@ public abstract class FoodDataMixin implements IEatHistoryAcessor {
         queueSaturation.addFirst(saturation);
         queueEaten.addFirst(eaten);
         this.hungerRoundErr = hungerRoundErr;
+
+        int length = Config.HISTORY_LENGTH_LONG.get();
+        int size = EatFormulaContext.findSumIndex(queueEaten,length).orElse(length);
+        queueFood = queueFood.stream().limit(size).collect(Collectors.toCollection(LinkedList::new));
+        queueHunger = queueHunger.stream().limit(size).collect(Collectors.toCollection(LinkedList::new));
+        queueSaturation = queueSaturation.stream().limit(size).collect(Collectors.toCollection(LinkedList::new));
+        queueEaten = queueEaten.stream().limit(size).collect(Collectors.toCollection(LinkedList::new));
         return Optional.empty();
     }
 }
