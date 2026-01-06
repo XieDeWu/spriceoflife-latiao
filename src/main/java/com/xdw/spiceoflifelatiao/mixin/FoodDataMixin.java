@@ -15,9 +15,7 @@ import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
-import java.math.BigDecimal;
-import java.math.RoundingMode;
-import java.util.LinkedList;
+import java.util.ArrayList;
 import java.util.Optional;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
@@ -27,10 +25,10 @@ import java.util.stream.Collectors;
 @Mixin(FoodData.class)
 public abstract class FoodDataMixin implements IEatHistoryAcessor {
     @Unique private final String eat_history_label = "spiceoflifelatiao:eat_history";
-    @Unique private LinkedList<Integer> queueFood = new LinkedList<>();
-    @Unique private LinkedList<Float> queueHunger = new LinkedList<>();
-    @Unique private LinkedList<Float> queueSaturation = new LinkedList<>();
-    @Unique private LinkedList<Float> queueEaten = new LinkedList<>();
+    @Unique private ArrayList<Integer> queueFood = new ArrayList<>();
+    @Unique private ArrayList<Float> queueHunger = new ArrayList<>();
+    @Unique private ArrayList<Float> queueSaturation = new ArrayList<>();
+    @Unique private ArrayList<Float> queueEaten = new ArrayList<>();
     @Unique private float hungerRoundErr = 0;
     @Shadow private int foodLevel;
     @Shadow private float saturationLevel;
@@ -54,7 +52,7 @@ public abstract class FoodDataMixin implements IEatHistoryAcessor {
         BlockBehaviourCached.foodUpd(foodLevel,saturationLevel);
         BlockBehaviourCached.getContext().ifPresent(x->{
             var expectHunger = x.hunger()+x.hungerAccRoundErr();
-            hunger.set(new BigDecimal(expectHunger).setScale(0, RoundingMode.HALF_EVEN).intValue());
+            hunger.set(Math.round(expectHunger));
             saturation.set(x.saturation());
             BlockBehaviourCached.realHunger = Optional.of(hunger.get());
             BlockBehaviourCached.realSaturation = Optional.of(x.saturation());
@@ -77,10 +75,10 @@ public abstract class FoodDataMixin implements IEatHistoryAcessor {
                 .ifPresent(eatHistory -> {
                     int length = Config.HISTORY_LENGTH_LONG.get();
                     int size = EatFormulaContext.findSumIndex(eatHistory.eaten(),length).orElse(length);
-                    queueFood = eatHistory.foodHash().stream().limit(size).collect(Collectors.toCollection(LinkedList::new));
-                    queueHunger = eatHistory.hunger().stream().limit(size).collect(Collectors.toCollection(LinkedList::new));
-                    queueSaturation = eatHistory.saturation().stream().limit(size).collect(Collectors.toCollection(LinkedList::new));
-                    queueEaten = eatHistory.eaten().stream().limit(size).collect(Collectors.toCollection(LinkedList::new));
+                    queueFood = eatHistory.foodHash().stream().limit(size).collect(Collectors.toCollection(ArrayList::new));
+                    queueHunger = eatHistory.hunger().stream().limit(size).collect(Collectors.toCollection(ArrayList::new));
+                    queueSaturation = eatHistory.saturation().stream().limit(size).collect(Collectors.toCollection(ArrayList::new));
+                    queueEaten = eatHistory.eaten().stream().limit(size).collect(Collectors.toCollection(ArrayList::new));
                     hungerRoundErr = eatHistory.hungerRoundErr();
                 });
     }
@@ -93,10 +91,10 @@ public abstract class FoodDataMixin implements IEatHistoryAcessor {
 
         int length = Config.HISTORY_LENGTH_LONG.get();
         int size = EatFormulaContext.findSumIndex(queueEaten,length).orElse(length);
-        queueFood = queueFood.stream().limit(size).collect(Collectors.toCollection(LinkedList::new));
-        queueHunger = queueHunger.stream().limit(size).collect(Collectors.toCollection(LinkedList::new));
-        queueSaturation = queueSaturation.stream().limit(size).collect(Collectors.toCollection(LinkedList::new));
-        queueEaten = queueEaten.stream().limit(size).collect(Collectors.toCollection(LinkedList::new));
+        queueFood = queueFood.stream().limit(size).collect(Collectors.toCollection(ArrayList::new));
+        queueHunger = queueHunger.stream().limit(size).collect(Collectors.toCollection(ArrayList::new));
+        queueSaturation = queueSaturation.stream().limit(size).collect(Collectors.toCollection(ArrayList::new));
+        queueEaten = queueEaten.stream().limit(size).collect(Collectors.toCollection(ArrayList::new));
         return Optional.empty();
     }
 }

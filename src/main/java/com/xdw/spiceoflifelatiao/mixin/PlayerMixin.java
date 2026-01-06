@@ -17,8 +17,6 @@ import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 
-import java.math.BigDecimal;
-import java.math.RoundingMode;
 import java.util.Optional;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
@@ -42,7 +40,7 @@ public abstract class PlayerMixin implements IPlayerAcessor {
         AtomicReference<Float> newRoundErr = new AtomicReference<>(0f);
         from.ifPresent(x->{
             float expectHunger = x.hunger()+x.hungerAccRoundErr();
-            int _realHunger = new BigDecimal(expectHunger).setScale(0, RoundingMode.HALF_EVEN).intValue();
+            int _realHunger = Math.round(expectHunger);
             Float _accErr = expectHunger - (float)_realHunger;
             realHunger.set(_realHunger);
             newRoundErr.set(_accErr);

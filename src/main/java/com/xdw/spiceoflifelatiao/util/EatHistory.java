@@ -5,10 +5,10 @@ import net.minecraft.world.item.Item;
 import org.jetbrains.annotations.NotNull;
 
 import java.io.*;
-import java.util.LinkedList;
+import java.util.ArrayList;
 import java.util.Optional;
 
-public record EatHistory(LinkedList<Integer> foodHash, LinkedList<Float> hunger,LinkedList<Float> saturation,LinkedList<Float> eaten,Float hungerRoundErr) implements Serializable  {
+public record EatHistory(ArrayList<Integer> foodHash, ArrayList<Float> hunger, ArrayList<Float> saturation, ArrayList<Float> eaten, Float hungerRoundErr) implements Serializable  {
     @Serial private static final long serialVersionUID = 100L;
     public static Optional<LivingEntity> recentEntity = Optional.empty();
     public Optional<byte[]> toBytes() {

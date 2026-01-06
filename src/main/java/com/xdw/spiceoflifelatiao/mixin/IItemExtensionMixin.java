@@ -13,8 +13,6 @@ import org.jetbrains.annotations.Nullable;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Overwrite;
 
-import java.math.BigDecimal;
-import java.math.RoundingMode;
 import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -42,7 +40,7 @@ public interface IItemExtensionMixin {
                 .map(x-> x instanceof Player p ? p : null)
                 .flatMap(rp -> EatFormulaContext.from(rp, stack))
                 .ifPresent(x -> {
-                    nutrition.set(new BigDecimal(x.hunger()+x.hungerAccRoundErr()).setScale(0, RoundingMode.HALF_EVEN).intValue());
+                    nutrition.set(Math.round(x.hunger()+x.hungerAccRoundErr()));
                     saturation.set(x.saturation());
                     eatSeconds.set(x.eat_seconds());
                 });

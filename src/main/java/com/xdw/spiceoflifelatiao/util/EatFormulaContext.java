@@ -207,11 +207,13 @@ public record EatFormulaContext(
 
     public static Optional<Integer> findSumIndex(List<Float> arr, float target) {
         float sum = 0;
-        for (int i = 0; i < arr.size(); i++) {
-            sum += arr.get(i);
+        int index = 0;
+        for (Float value : arr) {
+            sum += value;
             if (sum >= target) {
-                return Optional.of(i);
+                return Optional.of(index);
             }
+            index++;
         }
         return Optional.empty();
     }
