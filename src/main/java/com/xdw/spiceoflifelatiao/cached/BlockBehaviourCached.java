@@ -50,7 +50,7 @@ public class BlockBehaviourCached {
     public static Optional<EatFormulaContext> getContext(){
         if (context.isPresent()) return context;
         if (player.isPresent() && item.isPresent()){
-            context = EatFormulaContext.from(player.get(),item.get());
+            context = EatFormulaContext.from(player.get(),item.get(),item.get().getFoodProperties(player.get()));
             return context;
         }
         return Optional.empty();

@@ -16,7 +16,7 @@ public class PlayerEventHandle {
         if(player.isCreative() || player.isDeadOrDying()) return;
         if(!Config.EANBLE_CHANGE.get()) return;
         if(!Config.EANBLE_LOSS.get()) return;
-        EatFormulaContext.from(player, ItemStack.EMPTY).ifPresent(x->player.causeFoodExhaustion(x.loss()));
+        EatFormulaContext.from(player, ItemStack.EMPTY,null).ifPresent(x->player.causeFoodExhaustion(x.loss()));
         LevelCalcCached.update(player);
     }
 
@@ -26,7 +26,7 @@ public class PlayerEventHandle {
     public static void canPlayerSleepEvent(CanPlayerSleepEvent event){
         var player = event.getEntity();
         time = player.level().getDayTime();
-        loss = EatFormulaContext.from(player,ItemStack.EMPTY).map(EatFormulaContext::loss).orElse(0f);
+        loss = EatFormulaContext.from(player,ItemStack.EMPTY,null).map(EatFormulaContext::loss).orElse(0f);
     }
     @SubscribeEvent
     public static void onPlayerWalkUp(PlayerWakeUpEvent event){

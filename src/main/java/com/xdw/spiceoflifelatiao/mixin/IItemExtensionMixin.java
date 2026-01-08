@@ -1,6 +1,8 @@
 package com.xdw.spiceoflifelatiao.mixin;
 
 import com.xdw.spiceoflifelatiao.Config;
+import com.xdw.spiceoflifelatiao.cached.FoodPropertiesCached;
+import com.xdw.spiceoflifelatiao.linkage.IFoodItem;
 import com.xdw.spiceoflifelatiao.util.EatFormulaContext;
 import com.xdw.spiceoflifelatiao.util.EatHistory;
 import net.minecraft.core.component.DataComponents;
@@ -27,26 +29,37 @@ public interface IItemExtensionMixin {
     @Overwrite
     @Nullable // read javadoc to find a potential problem
     default FoodProperties getFoodProperties(ItemStack stack, @Nullable LivingEntity entity) {
-        var food = stack.get(DataComponents.FOOD);
-        if(food == null) return null;
-        if(!Config.EANBLE_CHANGE.get()) return food;
         if(entity != null) EatHistory.recentEntity = Optional.of(entity);
-        AtomicInteger nutrition = new AtomicInteger(food.nutrition());
-        AtomicReference<Float> saturation = new AtomicReference<>(food.saturation());
-        AtomicReference<Float> eatSeconds = new AtomicReference<>(food.eatSeconds());
+        AtomicReference<FoodProperties> food = new AtomicReference<>();
+        FoodPropertiesCached.getCached(entity,stack)
+                .or(()->{
+                    Optional<FoodProperties> f =  Optional.ofNullable(stack.get(DataComponents.FOOD));
+                    if(!(entity instanceof Player player)) return f;
+                    if(stack.getItem() instanceof IFoodItem box){
+                        f = box.getFoodProperties(stack,player);
+                        f.ifPresent(it->FoodPropertiesCached.addCached(player,stack,it));
+                    }
+                    return f;
+                })
+                .ifPresent(food::set);
+        if(food.get() == null) return null;
+        if(!Config.EANBLE_CHANGE.get()) return food.get();
+        AtomicInteger nutrition = new AtomicInteger(food.get().nutrition());
+        AtomicReference<Float> saturation = new AtomicReference<>(food.get().saturation());
+        AtomicReference<Float> eatSeconds = new AtomicReference<>(food.get().eatSeconds());
         int count = stack.getCount();
         stack.setCount(Math.max(1,stack.getCount()));
         EatHistory.recentEntity
                 .map(x-> x instanceof Player p ? p : null)
-                .flatMap(rp -> EatFormulaContext.from(rp, stack))
+                .flatMap(rp -> EatFormulaContext.from(rp, stack,food.get()))
                 .ifPresent(x -> {
                     nutrition.set(Math.round(x.hunger()+x.hungerAccRoundErr()));
                     saturation.set(x.saturation());
                     eatSeconds.set(x.eat_seconds());
                 });
-        boolean canAlwaysEat = food.canAlwaysEat();
-        Optional<ItemStack> usingConvertsTo = food.usingConvertsTo();
-        List<FoodProperties.PossibleEffect> effects = food.effects();
+        boolean canAlwaysEat = food.get().canAlwaysEat();
+        Optional<ItemStack> usingConvertsTo = food.get().usingConvertsTo();
+        List<FoodProperties.PossibleEffect> effects = food.get().effects();
         stack.setCount(count);
         return new FoodProperties(nutrition.get(), saturation.get(),canAlwaysEat, eatSeconds.get(),usingConvertsTo,effects);
     }

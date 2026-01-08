@@ -27,9 +27,9 @@ public record EatFormulaContext(
         @NotNull Float hungerAccRoundErr
 ) {
 
-    public static Optional<EatFormulaContext> from(Player player, ItemStack item){
+    public static Optional<EatFormulaContext> from(Player player, ItemStack item,FoodProperties foodProperties){
         return EatFormulaCalcCached.getCached(player,item).or(()->{
-            var value = EatFormulaContext.calc(player, item);
+            var value = EatFormulaContext.calc(player, item,foodProperties);
             value = configLimit(value,item);
             EatFormulaCalcCached.addCached(player,item,value);
             return value;
@@ -56,7 +56,7 @@ public record EatFormulaContext(
         ));
     }
 
-    public static Optional<EatFormulaContext> calc(Player player, ItemStack item){
+    public static Optional<EatFormulaContext> calc(Player player, ItemStack item,FoodProperties _foodProperties){
 
         var _item = Optional.of(item);
         Optional<Integer> foodHash = _item.map(ItemStack::getItem).map(EatHistory::getFoodHash);
@@ -69,7 +69,8 @@ public record EatFormulaContext(
         int _lengthShort = Config.HISTORY_LENGTH_SHORT.get();
         int __lengthShort = eatHistory.flatMap(x -> findSumIndex(x.eaten(), _lengthShort)).orElse(_lengthShort);
         int lengthShort = Math.min(__lengthShort,lengthLong);
-        Optional<FoodProperties> foodProperties = _item.flatMap(x-> Optional.ofNullable(x.get(DataComponents.FOOD)));
+//        Optional<FoodProperties> foodProperties = _item.flatMap(x-> Optional.ofNullable(x.get(DataComponents.FOOD)));
+        Optional<FoodProperties> foodProperties = Optional.ofNullable(_foodProperties);
         Float hunger_level = (float) foodData.getFoodLevel();
         Float saturation_level = foodData.getSaturationLevel();
         AtomicReference<Float> sum_hunger_long = new AtomicReference<>(0f);

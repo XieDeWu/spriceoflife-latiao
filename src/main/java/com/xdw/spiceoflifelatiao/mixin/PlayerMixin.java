@@ -35,7 +35,8 @@ public abstract class PlayerMixin implements IPlayerAcessor {
         if (!(foodData instanceof IEatHistoryAcessor acessor)) return;
         int count = pFood.getCount();
         pFood.setCount(1);
-        Optional<EatFormulaContext> from = EatFormulaContext.from((Player) (Object) this, pFood);
+        Player p = (Player) (Object) this;
+        Optional<EatFormulaContext> from = EatFormulaContext.from(p, pFood,pFood.getFoodProperties(p));
         AtomicInteger realHunger = new AtomicInteger(pFoodProperties.nutrition());
         AtomicReference<Float> newRoundErr = new AtomicReference<>(0f);
         from.ifPresent(x->{

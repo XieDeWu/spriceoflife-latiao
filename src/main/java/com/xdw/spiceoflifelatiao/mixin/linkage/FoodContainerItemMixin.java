@@ -1,5 +1,6 @@
 package com.xdw.spiceoflifelatiao.mixin.linkage;
 
+import com.xdw.spiceoflifelatiao.cached.FoodPropertiesCached;
 import com.xdw.spiceoflifelatiao.linkage.IFoodItem;
 import net.minecraft.client.player.LocalPlayer;
 import net.minecraft.server.level.ServerPlayer;
@@ -14,6 +15,8 @@ import org.spongepowered.asm.mixin.Unique;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
+
+import java.util.Optional;
 
 @Mixin(targets = "team.creative.solonion.common.item.foodcontainer.FoodContainerItem")
 public abstract class FoodContainerItemMixin implements IFoodItem {
@@ -36,18 +39,31 @@ public abstract class FoodContainerItemMixin implements IFoodItem {
             remap = false
     )
     private void getUseDuration(ItemStack stack, LivingEntity entity, CallbackInfoReturnable<Integer> cir) {
-        if(!(entity instanceof ServerPlayer player)) return;
-        if(handler == null || bestFoodSlot == null){
+        if(!(entity instanceof Player player)) return;
+        FoodPropertiesCached.getCached(entity,stack)
+                .or(()->getFoodProperties(stack,entity).stream().peek(foodProperties->{
+                    FoodPropertiesCached.addCached(player,stack,foodProperties);
+                }).findFirst())
+                .ifPresent(foodProperties -> {
+                    cir.setReturnValue(foodProperties.eatDurationTicks());
+                });
+    }
+
+    @Override
+    public Optional<FoodProperties> getFoodProperties(ItemStack stack, LivingEntity entity){
+        Optional<FoodProperties> food = FoodPropertiesCached.getCached(entity,stack);
+        if(food.isPresent()) return food;
+        if(!(entity instanceof Player player)) return Optional.empty();
+        if(!isInventoryEmpty(player,stack) || handler == null || bestFoodSlot == null){
             handler = getInventory(stack);
-            if(handler == null) return;
+            if(handler == null) return Optional.empty();
             bestFoodSlot = getBestFoodSlot(handler, player);
-            if(bestFoodSlot == null || bestFoodSlot < 0) return;
-            ItemStack bestFood = handler.getStackInSlot(bestFoodSlot);
-            if(bestFood == null || bestFood.isEmpty()) return;
-            FoodProperties foodProperties = bestFood.getFoodProperties(player);
-            duration = foodProperties != null ? foodProperties.eatDurationTicks() : cir.getReturnValue();
+            if(bestFoodSlot == null || bestFoodSlot < 0) return Optional.empty();
         }
-        cir.setReturnValue(duration);
+        ItemStack bestFood = handler.getStackInSlot(bestFoodSlot);
+        if(bestFood.isEmpty()) return Optional.empty();
+        food = Optional.ofNullable(bestFood.getFoodProperties(player));
+        return food;
     }
 
     @Shadow(remap = false)
@@ -59,4 +75,8 @@ public abstract class FoodContainerItemMixin implements IFoodItem {
         throw new AssertionError();
     }
 
+    @Shadow(remap = false)
+    private static boolean isInventoryEmpty(Player player, ItemStack container) {
+        throw new AssertionError();
+    }
 }
