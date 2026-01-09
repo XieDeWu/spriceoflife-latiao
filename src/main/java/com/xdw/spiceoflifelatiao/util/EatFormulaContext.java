@@ -61,9 +61,8 @@ public record EatFormulaContext(
         var _item = Optional.of(item);
         Optional<Integer> foodHash = _item.map(ItemStack::getItem).map(EatHistory::getFoodHash);
         FoodData foodData = player.getFoodData();
-        Optional<EatHistory> eatHistory = ((IEatHistoryAcessor)foodData)
-                .getEatHistory()
-                .flatMap(EatHistory::fromBytes);
+        Optional<EatHistory> eatHistory = Optional.ofNullable(((IEatHistoryAcessor) foodData)
+                .getEatHistory_Mem());
         int _lengthLong = Config.HISTORY_LENGTH_LONG.get();
         int lengthLong = eatHistory.flatMap(x -> findSumIndex(x.eaten(), _lengthLong)).orElse(_lengthLong);
         int _lengthShort = Config.HISTORY_LENGTH_SHORT.get();

@@ -47,11 +47,8 @@ public abstract class PlayerMixin implements IPlayerAcessor {
             newRoundErr.set(_accErr);
 
         });
-        acessor.addEatHistory(EatHistory.getFoodHash(pFood.getItem()),realHunger.get()*1.0f,pFoodProperties.saturation(),1.0f,newRoundErr.get());
+        acessor.addEatHistory_Mem(EatHistory.getFoodHash(pFood.getItem()),realHunger.get()*1.0f,pFoodProperties.saturation(),1.0f,newRoundErr.get());
         pFood.setCount(count);
-        if ((Object)this instanceof ServerPlayer player){
-            SyncHandler.syncEatHistory(player,Optional.empty());
-        }
     }
 
     @Override

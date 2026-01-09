@@ -34,13 +34,13 @@ public abstract class FoodDataMixin implements IEatHistoryAcessor {
     @Shadow private float saturationLevel;
     @Inject(at = @At(value = "TAIL"), method = "addAdditionalSaveData(Lnet/minecraft/nbt/CompoundTag;)V")
     public void addAdditionalSaveData(CompoundTag p_38720_, CallbackInfo info) {
-        getEatHistory().ifPresent(x->p_38720_.putByteArray(eat_history_label,x));
+        getEatHistory_Bin().ifPresent(x->p_38720_.putByteArray(eat_history_label,x));
     }
     @Inject(at = @At(value = "TAIL"), method = "readAdditionalSaveData(Lnet/minecraft/nbt/CompoundTag;)V")
     public void readAdditionalSaveData(CompoundTag p_38716_, CallbackInfo info) {
         if (p_38716_.contains(eat_history_label)) {
             Optional.of(p_38716_.getByteArray(eat_history_label))
-                    .ifPresent(this::setEatHistory);
+                    .ifPresent(this::setEatHistory_Bin);
         }
     }
 
@@ -62,10 +62,18 @@ public abstract class FoodDataMixin implements IEatHistoryAcessor {
         this.saturationLevel = Mth.clamp(saturation.get() + this.saturationLevel, 0.0F, (float)this.foodLevel);
     }
 
-    @Unique public Optional<byte[]> getEatHistory(){
-        return new EatHistory(queueFood, queueHunger, queueSaturation,queueEaten, hungerRoundErr).toBytes();
+    @Override
+    @Unique public EatHistory getEatHistory_Mem() {
+        return new EatHistory(queueFood, queueHunger, queueSaturation, queueEaten, hungerRoundErr);
     }
-    @Unique public void setEatHistory(byte[] eatHistoryBytes){
+
+    @Override
+    @Unique public Optional<byte[]> getEatHistory_Bin(){
+        return getEatHistory_Mem().toBytes();
+    }
+
+    @Override
+    @Unique public void setEatHistory_Bin(byte[] eatHistoryBytes){
         EatHistory.fromBytes(eatHistoryBytes)
                 .filter(x -> x.foodHash() != null && x.hunger() != null && x.saturation() != null && x.eaten() != null && x.hungerRoundErr() != null )
                 .filter(x -> {
@@ -82,7 +90,9 @@ public abstract class FoodDataMixin implements IEatHistoryAcessor {
                     hungerRoundErr = eatHistory.hungerRoundErr();
                 });
     }
-    @Unique public Optional<byte[]> addEatHistory(Integer foodID,Float hunger,float saturation,float eaten,float hungerRoundErr){
+
+    @Override
+    @Unique public Optional<byte[]> addEatHistory_Mem(Integer foodID, Float hunger, float saturation, float eaten, float hungerRoundErr){
         queueFood.addFirst(foodID);
         queueHunger.addFirst(hunger);
         queueSaturation.addFirst(saturation);

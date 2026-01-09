@@ -60,11 +60,11 @@ public class Config {
 
     public static final ModConfigSpec.ConfigValue<Integer> HISTORY_LENGTH_LONG = BUILDER
             .comment("用于统计长期饮食数据")
-            .defineInRange("historyLengthLong", 512, 0, 4096);
+            .defineInRange("historyLengthLong", 512, 0, 65535);
 
     public static final ModConfigSpec.ConfigValue<Integer> HISTORY_LENGTH_SHORT = BUILDER
             .comment("用于统计短期饮食数据")
-            .defineInRange("historyLengthShort", 16, 0, 1024);
+            .defineInRange("historyLengthShort", 16, 0, 65535);
 
     public static final ModConfigSpec.ConfigValue<List<? extends String>> LOSS = BUILDER
             .comment("默认：固定系数、饥饿程度、短期营养、短期摄入、过饱和、盔甲值、亮度、湿漉、方块速度系数，玩家状态，玩家睡眠中")

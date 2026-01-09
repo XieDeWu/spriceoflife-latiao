@@ -36,7 +36,7 @@ public class BlockBehaviourCached {
                 && player.get().getFoodData() instanceof IEatHistoryAcessor ac
         ){
             int hash = EatHistory.getFoodHash(item.get().getItem());
-            ac.addEatHistory(hash, (float)realHunger.get(), realSaturation.get(), 1.0f/(float)bites.get(), hungerRoundErr.get());
+            ac.addEatHistory_Mem(hash, (float)realHunger.get(), realSaturation.get(), 1.0f/(float)bites.get(), hungerRoundErr.get());
         }
         flag = false;
         player = Optional.empty();

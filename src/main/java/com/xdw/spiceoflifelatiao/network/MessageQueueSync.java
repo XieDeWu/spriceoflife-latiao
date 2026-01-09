@@ -27,7 +27,7 @@ public record MessageQueueSync(byte[] eatHistory) implements CustomPacketPayload
 
     public static void handle(final MessageQueueSync message, final IPayloadContext ctx) {
         ctx.enqueueWork(() -> {
-            ((IEatHistoryAcessor)(ctx.player().getFoodData())).setEatHistory(message.eatHistory());
+            ((IEatHistoryAcessor)(ctx.player().getFoodData())).setEatHistory_Bin(message.eatHistory());
         });
     }
 }
