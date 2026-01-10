@@ -1,11 +1,9 @@
 package com.xdw.spiceoflifelatiao.mixin;
 
-import com.xdw.spiceoflifelatiao.network.SyncHandler;
 import com.xdw.spiceoflifelatiao.util.EatFormulaContext;
 import com.xdw.spiceoflifelatiao.util.EatHistory;
 import com.xdw.spiceoflifelatiao.util.IEatHistoryAcessor;
 import com.xdw.spiceoflifelatiao.util.IPlayerAcessor;
-import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.food.FoodData;
 import net.minecraft.world.food.FoodProperties;

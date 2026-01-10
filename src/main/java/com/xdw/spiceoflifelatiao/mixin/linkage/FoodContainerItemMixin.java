@@ -2,8 +2,6 @@ package com.xdw.spiceoflifelatiao.mixin.linkage;
 
 import com.xdw.spiceoflifelatiao.cached.FoodPropertiesCached;
 import com.xdw.spiceoflifelatiao.linkage.IFoodItem;
-import net.minecraft.client.player.LocalPlayer;
-import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.food.FoodProperties;

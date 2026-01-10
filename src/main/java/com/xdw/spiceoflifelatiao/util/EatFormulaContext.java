@@ -2,7 +2,7 @@ package com.xdw.spiceoflifelatiao.util;
 
 import com.xdw.spiceoflifelatiao.Config;
 import com.xdw.spiceoflifelatiao.cached.EatFormulaCalcCached;
-import com.xdw.spiceoflifelatiao.cached.LevelCalcCached;
+import com.xdw.spiceoflifelatiao.cached.PlayerCalcCached;
 import net.minecraft.core.component.DataComponents;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.food.FoodData;
@@ -123,10 +123,10 @@ public record EatFormulaContext(
                     }
                 });
         float armor = player.getArmorValue();
-        float light = LevelCalcCached.light;
+        float light = PlayerCalcCached.light;
         float is_wet = player.isInWaterRainOrBubble() ? 1f : 0f;
-        float rain_level = LevelCalcCached.rainLevel;
-        float thunder_level = LevelCalcCached.thunderLevel;
+        float rain_level = PlayerCalcCached.rainLevel;
+        float thunder_level = PlayerCalcCached.thunderLevel;
         float block_speed_factor = ((IPlayerAcessor) player).getBlockSpeedFactor_public();
         AtomicReference<Float> player_buff = new AtomicReference<>(0f);
         AtomicReference<Float> player_debuff = new AtomicReference<>(0f);
@@ -137,6 +137,7 @@ public record EatFormulaContext(
             }
         });
         float player_zzz = player.isSleeping() ? 1f : 0f;
+        float player_un_sleeptime = PlayerCalcCached.player_un_sleeptime;
 
         LinkedHashMap<String, Float> context = new LinkedHashMap<>();
         context.put("HUNGER_LEVEL",hunger_level);
@@ -154,6 +155,7 @@ public record EatFormulaContext(
         context.put("PLAYER_BUFF",player_buff.get());
         context.put("PLAYER_DEBUFF",player_debuff.get());
         context.put("PLAYER_ZZZ",player_zzz);
+        context.put("PLAYER_UN_SLEEPTIME",player_un_sleeptime);
         context.put("HUNGER_ORG",hunger_org);
         context.put("SATURATION_ORG",saturation_org);
         context.put("EAT_SECONDS_ORG",eat_seconds_org);
@@ -184,23 +186,31 @@ public record EatFormulaContext(
             return Optional.empty();
         }
     }
+    private static final FifoHashMap<Integer,Expression> expCached = new FifoHashMap<>(8);
     private static Expression eval(String formula, LinkedHashMap<String,Float> context){
-        ExpressionBuilder exp = new ExpressionBuilder(formula);
-        context.keySet().forEach(exp::variable);
-        exp
-                .function(new Function("max", 2) {
-                    @Override
-                    public double apply(double... args) {
-                        return Math.max(args[0], args[1]);
-                    }
-                })
-                .function(new Function("min", 2) {
-                    @Override
-                    public double apply(double... args) {
-                        return Math.min(args[0], args[1]);
-                    }
-                });
-        Expression build = exp.build();
+        var hashcode = formula.hashCode();
+        Expression build;
+        if(expCached.get(hashcode) instanceof Expression exp){
+            build = exp;
+        }else{
+            ExpressionBuilder exp = new ExpressionBuilder(formula);
+            context.keySet().forEach(exp::variable);
+            exp
+                    .function(new Function("max", 2) {
+                        @Override
+                        public double apply(double... args) {
+                            return Math.max(args[0], args[1]);
+                        }
+                    })
+                    .function(new Function("min", 2) {
+                        @Override
+                        public double apply(double... args) {
+                            return Math.min(args[0], args[1]);
+                        }
+                    });
+            build = exp.build();
+            expCached.put(hashcode,build);
+        }
         context.keySet().forEach(it-> build.setVariable(it,context.get(it)));
         return build;
     }

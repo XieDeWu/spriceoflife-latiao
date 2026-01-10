@@ -4,7 +4,6 @@ import com.xdw.spiceoflifelatiao.SpiceOfLifeLatiao;
 import com.xdw.spiceoflifelatiao.util.IEatHistoryAcessor;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.player.Player;
-import net.minecraft.world.food.FoodData;
 import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.neoforge.common.NeoForge;
 import net.neoforged.neoforge.event.entity.player.PlayerEvent;

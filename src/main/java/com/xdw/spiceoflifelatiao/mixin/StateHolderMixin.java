@@ -11,7 +11,6 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 
 import java.lang.reflect.Field;
 import java.util.Optional;
-import java.util.OptionalInt;
 
 @Mixin(StateHolder.class)
 public class StateHolderMixin {

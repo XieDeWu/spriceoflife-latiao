@@ -10,7 +10,7 @@ public class Config {
     private static final ModConfigSpec.Builder BUILDER = new ModConfigSpec.Builder();
 
     public static final ModConfigSpec.ConfigValue<Boolean> EANBLE_CHANGE = BUILDER
-            .comment("公式上下文与计算顺序如下，仅支持向前引用")
+            .comment("公式上下文与计算顺序如下，仅支持向前引用，时间单位为秒或游戏刻")
             .comment("默认数值均为0.0，计算异常默认使用原版方法运行")
             .comment("HUNGER_LEVEL 玩家饱食度")
             .comment("SATURATION_LEVEL 玩家饱和度")
@@ -27,6 +27,7 @@ public class Config {
             .comment("PLAYER_BUFF 玩家增益数")
             .comment("PLAYER_DEBUFF 玩家减益数")
             .comment("PLAYER_ZZZ 玩家睡眠中")
+            .comment("PLAYER_UN_SLEEPTIME 玩家未睡眠时长")
             .comment("LOSS 自然饥饿")
             .comment("HUNGER_ORG 食物原饱食度")
             .comment("SATURATION_ORG 食物原饱和度")
@@ -67,7 +68,7 @@ public class Config {
             .defineInRange("historyLengthShort", 16, 0, 65535);
 
     public static final ModConfigSpec.ConfigValue<List<? extends String>> LOSS = BUILDER
-            .comment("默认：固定系数、饥饿程度、短期营养、短期摄入、过饱和、盔甲值、亮度、湿漉、方块速度系数，玩家状态，玩家睡眠中")
+            .comment("默认：固定系数、饥饿程度、短期营养、短期摄入、过饱和、盔甲值、亮度、湿漉、方块速度系数、玩家状态、玩家睡眠中、玩家未睡眠时长")
             .defineListAllowEmpty("LOSS", List.of("0.005",
                     "*2^(HUNGER_LEVEL/20-1)",
                     "*0.5^(SUM_SATURATION_SHORT/max(SUM_HUNGER_SHORT,1)-1)",
@@ -79,7 +80,8 @@ public class Config {
                     "*(2-BLOCK_SPEED_FACTOR)",
                     "*0.8^PLAYER_BUFF",
                     "*1.5^PLAYER_DEBUFF",
-                    "*(1-0.4*PLAYER_ZZZ)"
+                    "*(1-0.4*PLAYER_ZZZ)",
+                    "*(2-3/(3+PLAYER_UN_SLEEPTIME/24000))"
             ),()->"",it->it instanceof String);
 
     public static final ModConfigSpec.ConfigValue<List<? extends String>> HUNGER = BUILDER

@@ -24,7 +24,7 @@ public class FoodPropertiesCached {
     private static String getID(Player player,ItemStack stack){
         var play = player.getStringUUID().hashCode();
         var itemID = stack.getItem().toString().replace(" ", "").hashCode();
-        var gap = player.level().getGameTime()/6;
+        var gap = LevelCalcCached.gameTime /6;
         return play + ":" + itemID + ":" + gap;
     }
 }
