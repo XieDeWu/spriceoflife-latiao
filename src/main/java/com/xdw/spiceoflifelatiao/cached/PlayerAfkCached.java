@@ -15,6 +15,6 @@ public class PlayerAfkCached {
     public static boolean isAfk(Integer id, Long curTime, int hunger){
 //        20gt 60s 4min~?
         var afkTime  = playerAfkTime.getOrDefault(id,Long.MAX_VALUE);
-        return (curTime - afkTime) > 20L * 60L * (3 + Math.pow(1.2f,hunger));
+        return (curTime - afkTime) > 20L * 60L * (3 + hunger);
     }
 }

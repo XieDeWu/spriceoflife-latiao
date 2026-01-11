@@ -30,22 +30,22 @@ public record EatFormulaContext(
     public static Optional<EatFormulaContext> from(Player player, ItemStack item,FoodProperties foodProperties){
         return EatFormulaCalcCached.getCached(player,item).or(()->{
             var value = EatFormulaContext.calc(player, item,foodProperties);
-            value = configLimit(value,item);
+            value = configLimit(value,foodProperties);
             EatFormulaCalcCached.addCached(player,item,value);
             return value;
         });
     }
-    public static Optional<EatFormulaContext> configLimit(Optional<EatFormulaContext> value,ItemStack itemStack){
+    public static Optional<EatFormulaContext> configLimit(Optional<EatFormulaContext> value,FoodProperties defaultFoodProperties){
         if(value.isEmpty()) return value;
         var v = value.get();
         float loss = Config.EANBLE_LOSS.get() ? v.loss : 0f;
-        float hunger = 0f;
-        float saturation = 0f;
-        float eat_seconds = 1.6f;
-        if(itemStack != null && itemStack.get(DataComponents.FOOD) instanceof FoodProperties pro){
-            hunger = Config.EANBLE_HUNGER.get() ? v.hunger : pro.nutrition();
-            saturation = Config.EANBLE_SATURATION.get() ? v.saturation : pro.saturation();
-            eat_seconds = Config.EANBLE_EAT_SECONDS.get() ? v.eat_seconds : pro.eatSeconds();
+        float hunger = v.hunger;
+        float saturation = v.saturation;
+        float eat_seconds = v.eat_seconds;
+        if(defaultFoodProperties != null){
+            hunger = Config.EANBLE_HUNGER.get() ? v.hunger : defaultFoodProperties.nutrition();
+            saturation = Config.EANBLE_SATURATION.get() ? v.saturation : defaultFoodProperties.saturation();
+            eat_seconds = Config.EANBLE_EAT_SECONDS.get() ? v.eat_seconds : defaultFoodProperties.eatSeconds();
         }
         return Optional.of(new EatFormulaContext(
                 loss,
@@ -167,13 +167,17 @@ public record EatFormulaContext(
         context.put("EATEN_SHORT",eaten_short.get());
         context.put("EATEN_LONG",eaten_long.get());
         try {
-            Float loss = (float) eval(String.join("",Config.LOSS.get()),context).evaluate();
+            float loss = (float) eval(String.join("",Config.LOSS.get()),context).evaluate();
+            if(Float.isNaN(loss) || Float.isInfinite(loss)) return Optional.empty();
             context.put("LOSS",loss);
-            Float hunger = (float) eval(String.join("",Config.HUNGER.get()),context).evaluate();
+            float hunger = (float) eval(String.join("",Config.HUNGER.get()),context).evaluate();
+            if(Float.isNaN(hunger) || Float.isInfinite(hunger)) return Optional.empty();
             context.put("HUNGER",hunger);
-            Float saturation = (float) eval(String.join("",Config.SATURATION.get()),context).evaluate();
+            float saturation = (float) eval(String.join("",Config.SATURATION.get()),context).evaluate();
+            if(Float.isNaN(saturation) || Float.isInfinite(saturation)) return Optional.empty();
             context.put("SATURATION",saturation);
-            Float eat_seconds = (float) eval(String.join("",Config.EAT_SECONDS.get()),context).evaluate();
+            float eat_seconds = (float) eval(String.join("",Config.EAT_SECONDS.get()),context).evaluate();
+            if(Float.isNaN(eat_seconds) || Float.isInfinite(eat_seconds)) return Optional.empty();
             context.put("EAT_SECONDS",eat_seconds);
             return Optional.of(new EatFormulaContext(
                     loss,

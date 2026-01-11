@@ -30,8 +30,12 @@ public class PlayerEventHandle {
         PlayerCalcCached.update(player);
         EatFormulaContext.from(player, ItemStack.EMPTY,null).ifPresent(x->player.causeFoodExhaustion(x.loss()));
         var oldData = player.getData(ModAttachments.PLAYER_UN_SLEEPTIME.get());
-        var newData = new PlayerUnSleepTimeRecord(oldData.player_un_sleeptime() + 1);
-        player.setData(ModAttachments.PLAYER_UN_SLEEPTIME.get(), newData);
+
+        var newTime = oldData.player_un_sleeptime() + 1;
+        if(LevelCalcCached.gameTime % 20 == 0 && player.isSleeping())
+            newTime =  Math.round(Math.max(0,newTime*0.98-160));
+
+        player.setData(ModAttachments.PLAYER_UN_SLEEPTIME.get(), new PlayerUnSleepTimeRecord(newTime));
     }
 
 

@@ -56,8 +56,8 @@ public abstract class FoodContainerItemMixin implements IFoodItem {
             handler = getInventory(stack);
             if(handler == null) return Optional.empty();
             bestFoodSlot = getBestFoodSlot(handler, player);
-            if(bestFoodSlot == null || bestFoodSlot < 0) return Optional.empty();
         }
+        if(handler == null || bestFoodSlot == null || bestFoodSlot < 0) return Optional.empty();
         ItemStack bestFood = handler.getStackInSlot(bestFoodSlot);
         if(bestFood.isEmpty()) return Optional.empty();
         food = Optional.ofNullable(bestFood.getFoodProperties(player));
