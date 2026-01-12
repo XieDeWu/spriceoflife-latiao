@@ -15,6 +15,7 @@ import net.neoforged.neoforge.event.entity.player.CanPlayerSleepEvent;
 import net.neoforged.neoforge.event.entity.player.PlayerWakeUpEvent;
 
 import java.util.Map;
+import java.util.Optional;
 
 public class PlayerEventHandle {
     @SubscribeEvent
@@ -29,13 +30,23 @@ public class PlayerEventHandle {
         LevelCalcCached.update(player.level());
         PlayerCalcCached.update(player);
         EatFormulaContext.from(player, ItemStack.EMPTY,null).ifPresent(x->player.causeFoodExhaustion(x.loss()));
-        var oldData = player.getData(ModAttachments.PLAYER_UN_SLEEPTIME.get());
 
-        var newTime = oldData.player_un_sleeptime() + 1;
-        if(LevelCalcCached.gameTime % 20 == 0 && player.isSleeping())
-            newTime =  Math.round(Math.max(0,newTime*0.98-160));
-
-        player.setData(ModAttachments.PLAYER_UN_SLEEPTIME.get(), new PlayerUnSleepTimeRecord(newTime));
+        if(LevelCalcCached.gameTime % 20 == 0){
+            long oldTime = player.level().isClientSide
+                    ? player.getData(ModAttachments.PLAYER_UN_SLEEPTIME.get()).player_un_sleeptime()
+                    : Optional.ofNullable(ModAttachments.server_cached_player_un_sleeptime.get(id))
+                    .orElseGet(()->player.getData(ModAttachments.PLAYER_UN_SLEEPTIME.get()).player_un_sleeptime());
+            var newTime = oldTime + 1;
+            newTime = player.isSleeping() ? Math.round(Math.max(0,newTime*0.98-160)) : newTime;
+            if(player.level().isClientSide){
+                player.setData(ModAttachments.PLAYER_UN_SLEEPTIME.get(), new PlayerUnSleepTimeRecord(newTime));
+            }else{
+                ModAttachments.server_cached_player_un_sleeptime.put(id,newTime);
+                if(LevelCalcCached.gameTime % 200 == 0) {
+                    player.setData(ModAttachments.PLAYER_UN_SLEEPTIME.get(), new PlayerUnSleepTimeRecord(newTime));
+                }
+            }
+        }
     }
 
 
@@ -61,6 +72,7 @@ public class PlayerEventHandle {
 
                     var time = player.getData(ModAttachments.PLAYER_UN_SLEEPTIME.get());
                     var updTime = new PlayerUnSleepTimeRecord(Math.round(Math.max(0,time.player_un_sleeptime() * 0.7 - gap * 6)));
+                    ModAttachments.server_cached_player_un_sleeptime.put(id,updTime.player_un_sleeptime());
                     player.setData(ModAttachments.PLAYER_UN_SLEEPTIME.get(),updTime);
                 });
     }

@@ -1,6 +1,6 @@
 package com.xdw.spiceoflifelatiao.mixin;
 
-import com.xdw.spiceoflifelatiao.Config;
+import com.xdw.spiceoflifelatiao.cached.ConfigCached;
 import com.xdw.spiceoflifelatiao.cached.FoodPropertiesCached;
 import com.xdw.spiceoflifelatiao.linkage.IFoodItem;
 import com.xdw.spiceoflifelatiao.util.EatFormulaContext;
@@ -43,7 +43,7 @@ public interface IItemExtensionMixin {
                 })
                 .ifPresent(food::set);
         if(food.get() == null) return null;
-        if(!Config.EANBLE_CHANGE.get()) return food.get();
+        if(!ConfigCached.EANBLE_CHANGE) return food.get();
         AtomicInteger nutrition = new AtomicInteger(food.get().nutrition());
         AtomicReference<Float> saturation = new AtomicReference<>(food.get().saturation());
         AtomicReference<Float> eatSeconds = new AtomicReference<>(food.get().eatSeconds());

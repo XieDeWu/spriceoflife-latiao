@@ -3,7 +3,6 @@ package com.xdw.spiceoflifelatiao.util;
 import com.xdw.spiceoflifelatiao.Config;
 import com.xdw.spiceoflifelatiao.cached.EatFormulaCalcCached;
 import com.xdw.spiceoflifelatiao.cached.PlayerCalcCached;
-import net.minecraft.core.component.DataComponents;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.food.FoodData;
 import net.minecraft.world.food.FoodProperties;

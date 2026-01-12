@@ -1,6 +1,7 @@
 package com.xdw.spiceoflifelatiao.attachments;
 
 import com.xdw.spiceoflifelatiao.SpiceOfLifeLatiao;
+import com.xdw.spiceoflifelatiao.util.FifoHashMap;
 import net.neoforged.neoforge.attachment.AttachmentType;
 import net.neoforged.neoforge.registries.DeferredRegister;
 import net.neoforged.neoforge.registries.NeoForgeRegistries;
@@ -15,5 +16,6 @@ public class ModAttachments {
                     .serialize(PlayerUnSleepTimeRecord.CODEC)      // 存档用 Codec
                     .sync(PlayerUnSleepTimeRecord.STREAM_CODEC)    // 同步用 StreamCodec
                     .build());
+    public static final FifoHashMap<Integer,Long> server_cached_player_un_sleeptime = new FifoHashMap<>(256);
 }
 
