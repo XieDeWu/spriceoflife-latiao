@@ -1,12 +1,8 @@
 package com.xdw.spiceoflifelatiao.event;
 
-import com.xdw.spiceoflifelatiao.Config;
 import com.xdw.spiceoflifelatiao.attachments.ModAttachments;
 import com.xdw.spiceoflifelatiao.attachments.PlayerUnSleepTimeRecord;
-import com.xdw.spiceoflifelatiao.cached.LevelCalcCached;
-import com.xdw.spiceoflifelatiao.cached.PlayerAfkCached;
-import com.xdw.spiceoflifelatiao.cached.PlayerCalcCached;
-import com.xdw.spiceoflifelatiao.cached.PlayerSleepCached;
+import com.xdw.spiceoflifelatiao.cached.*;
 import com.xdw.spiceoflifelatiao.util.EatFormulaContext;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
@@ -22,8 +18,8 @@ public class PlayerEventHandle {
     public static void tickPlayer(net.neoforged.neoforge.event.tick.PlayerTickEvent.Post event) {
         Player player = event.getEntity();
         if(player.isCreative() || player.isDeadOrDying()) return;
-        if(!Config.EANBLE_CHANGE.get()) return;
-        if(!Config.EANBLE_LOSS.get()) return;
+        if(!ConfigCached.EANBLE_CHANGE) return;
+        if(!ConfigCached.EANBLE_LOSS) return;
         var id = player.getStringUUID().hashCode();
         PlayerAfkCached.addSampling(id,player.getLookAngle(), LevelCalcCached.gameTime);
         if(PlayerAfkCached.isAfk(id, LevelCalcCached.gameTime,PlayerCalcCached.hunger)) return;

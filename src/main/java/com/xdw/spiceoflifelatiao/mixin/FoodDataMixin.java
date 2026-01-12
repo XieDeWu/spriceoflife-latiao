@@ -1,7 +1,7 @@
 package com.xdw.spiceoflifelatiao.mixin;
 
-import com.xdw.spiceoflifelatiao.Config;
 import com.xdw.spiceoflifelatiao.cached.BlockBehaviourCached;
+import com.xdw.spiceoflifelatiao.cached.ConfigCached;
 import com.xdw.spiceoflifelatiao.util.EatFormulaContext;
 import com.xdw.spiceoflifelatiao.util.EatHistory;
 import com.xdw.spiceoflifelatiao.util.IEatHistoryAcessor;
@@ -81,7 +81,7 @@ public abstract class FoodDataMixin implements IEatHistoryAcessor {
                     return x.hunger().size() == length && x.saturation().size() == length && x.eaten().size() == length;
                 })
                 .ifPresent(eatHistory -> {
-                    int length = Config.HISTORY_LENGTH_LONG.get();
+                    int length = ConfigCached.HISTORY_LENGTH_LONG;
                     int size = EatFormulaContext.findSumIndex(eatHistory.eaten(),length).orElse(length);
                     queueFood = eatHistory.foodHash().stream().limit(size).collect(Collectors.toCollection(ArrayList::new));
                     queueHunger = eatHistory.hunger().stream().limit(size).collect(Collectors.toCollection(ArrayList::new));
@@ -99,7 +99,7 @@ public abstract class FoodDataMixin implements IEatHistoryAcessor {
         queueEaten.addFirst(eaten);
         this.hungerRoundErr = hungerRoundErr;
 
-        int length = Config.HISTORY_LENGTH_LONG.get();
+        int length = ConfigCached.HISTORY_LENGTH_LONG;
         int size = EatFormulaContext.findSumIndex(queueEaten,length).orElse(length);
         queueFood = queueFood.stream().limit(size).collect(Collectors.toCollection(ArrayList::new));
         queueHunger = queueHunger.stream().limit(size).collect(Collectors.toCollection(ArrayList::new));
