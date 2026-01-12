@@ -1,6 +1,7 @@
 package com.xdw.spiceoflifelatiao.util;
 
 import com.xdw.spiceoflifelatiao.Config;
+import com.xdw.spiceoflifelatiao.cached.ConfigCached;
 import com.xdw.spiceoflifelatiao.cached.EatFormulaCalcCached;
 import com.xdw.spiceoflifelatiao.cached.PlayerCalcCached;
 import net.minecraft.world.entity.player.Player;
@@ -37,14 +38,14 @@ public record EatFormulaContext(
     public static Optional<EatFormulaContext> configLimit(Optional<EatFormulaContext> value,FoodProperties defaultFoodProperties){
         if(value.isEmpty()) return value;
         var v = value.get();
-        float loss = Config.EANBLE_LOSS.get() ? v.loss : 0f;
+        float loss = ConfigCached.EANBLE_LOSS ? v.loss : 0f;
         float hunger = v.hunger;
         float saturation = v.saturation;
         float eat_seconds = v.eat_seconds;
         if(defaultFoodProperties != null){
-            hunger = Config.EANBLE_HUNGER.get() ? v.hunger : defaultFoodProperties.nutrition();
-            saturation = Config.EANBLE_SATURATION.get() ? v.saturation : defaultFoodProperties.saturation();
-            eat_seconds = Config.EANBLE_EAT_SECONDS.get() ? v.eat_seconds : defaultFoodProperties.eatSeconds();
+            hunger = ConfigCached.EANBLE_HUNGER ? v.hunger : defaultFoodProperties.nutrition();
+            saturation = ConfigCached.EANBLE_SATURATION ? v.saturation : defaultFoodProperties.saturation();
+            eat_seconds = ConfigCached.EANBLE_EAT_SECONDS ? v.eat_seconds : defaultFoodProperties.eatSeconds();
         }
         return Optional.of(new EatFormulaContext(
                 loss,
@@ -62,9 +63,9 @@ public record EatFormulaContext(
         FoodData foodData = player.getFoodData();
         Optional<EatHistory> eatHistory = Optional.ofNullable(((IEatHistoryAcessor) foodData)
                 .getEatHistory_Mem());
-        int _lengthLong = Config.HISTORY_LENGTH_LONG.get();
+        int _lengthLong = ConfigCached.HISTORY_LENGTH_LONG;
         int lengthLong = eatHistory.flatMap(x -> findSumIndex(x.eaten(), _lengthLong)).orElse(_lengthLong);
-        int _lengthShort = Config.HISTORY_LENGTH_SHORT.get();
+        int _lengthShort = ConfigCached.HISTORY_LENGTH_SHORT;
         int __lengthShort = eatHistory.flatMap(x -> findSumIndex(x.eaten(), _lengthShort)).orElse(_lengthShort);
         int lengthShort = Math.min(__lengthShort,lengthLong);
 //        Optional<FoodProperties> foodProperties = _item.flatMap(x-> Optional.ofNullable(x.get(DataComponents.FOOD)));
@@ -166,16 +167,16 @@ public record EatFormulaContext(
         context.put("EATEN_SHORT",eaten_short.get());
         context.put("EATEN_LONG",eaten_long.get());
         try {
-            float loss = (float) eval(String.join("",Config.LOSS.get()),context).evaluate();
+            float loss = (float) eval(String.join("",ConfigCached.LOSS),context).evaluate();
             if(Float.isNaN(loss) || Float.isInfinite(loss)) return Optional.empty();
             context.put("LOSS",loss);
-            float hunger = (float) eval(String.join("",Config.HUNGER.get()),context).evaluate();
+            float hunger = (float) eval(String.join("",ConfigCached.HUNGER),context).evaluate();
             if(Float.isNaN(hunger) || Float.isInfinite(hunger)) return Optional.empty();
             context.put("HUNGER",hunger);
-            float saturation = (float) eval(String.join("",Config.SATURATION.get()),context).evaluate();
+            float saturation = (float) eval(String.join("",ConfigCached.SATURATION),context).evaluate();
             if(Float.isNaN(saturation) || Float.isInfinite(saturation)) return Optional.empty();
             context.put("SATURATION",saturation);
-            float eat_seconds = (float) eval(String.join("",Config.EAT_SECONDS.get()),context).evaluate();
+            float eat_seconds = (float) eval(String.join("",ConfigCached.EAT_SECONDS),context).evaluate();
             if(Float.isNaN(eat_seconds) || Float.isInfinite(eat_seconds)) return Optional.empty();
             context.put("EAT_SECONDS",eat_seconds);
             return Optional.of(new EatFormulaContext(
