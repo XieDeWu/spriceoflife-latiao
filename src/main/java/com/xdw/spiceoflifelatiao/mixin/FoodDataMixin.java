@@ -8,6 +8,7 @@ import com.xdw.spiceoflifelatiao.util.IEatHistoryAcessor;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.util.Mth;
 import net.minecraft.world.food.FoodData;
+import net.minecraft.world.food.FoodProperties;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Shadow;
 import org.spongepowered.asm.mixin.Unique;
@@ -16,6 +17,7 @@ import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
 import java.util.ArrayList;
+import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
@@ -43,14 +45,27 @@ public abstract class FoodDataMixin implements IEatHistoryAcessor {
                     .ifPresent(this::setEatHistory_Bin);
         }
     }
+    @Inject(method = "eat*", at = @At("TAIL"))
+    public void eat(FoodProperties foodProperties, CallbackInfo ci) {
+        if(BlockBehaviourCached.flag) BlockBehaviourCached.foodProperties = Optional.ofNullable(foodProperties);
+    }
+
 
     @Inject(method = "add", at = @At("HEAD"),cancellable = true)
     private void add(int foodLevel, float saturationLevel, CallbackInfo ci) {
         ci.cancel();
         AtomicInteger hunger = new AtomicInteger(foodLevel);
         AtomicReference<Float> saturation = new AtomicReference<>(saturationLevel);
-        BlockBehaviourCached.foodUpd(foodLevel,saturationLevel);
-        BlockBehaviourCached.getContext().ifPresent(x->{
+        BlockBehaviourCached.addHunger = Optional.of(foodLevel);
+        BlockBehaviourCached.addSaturation = Optional.of(saturationLevel);
+        BlockBehaviourCached.getContext(new FoodProperties(
+                foodLevel,
+                saturationLevel,
+                BlockBehaviourCached.foodProperties.map(FoodProperties::canAlwaysEat).orElse(true),
+                BlockBehaviourCached.foodProperties.map(FoodProperties::eatSeconds).orElse(1.6f),
+                BlockBehaviourCached.foodProperties.flatMap(FoodProperties::usingConvertsTo),
+                BlockBehaviourCached.foodProperties.map(FoodProperties::effects).orElse(List.of())
+        )).ifPresent(x->{
             var expectHunger = x.hunger()+x.hungerAccRoundErr();
             hunger.set(Math.round(expectHunger));
             saturation.set(x.saturation());

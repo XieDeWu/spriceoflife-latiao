@@ -14,7 +14,7 @@ import java.util.Optional;
 
 @Mixin(StateHolder.class)
 public class StateHolderMixin {
-    @Inject(at = @At("HEAD"),method = "getValue")
+    @Inject(at = @At("TAIL"),method = "getValue")
     private static <T extends Comparable<T>> void getValue(Property<T> property, CallbackInfoReturnable<T> cir) {
         if(BlockBehaviourCached.flag
 //                && Integer.class.isAssignableFrom(property.getValueClass())
@@ -26,6 +26,7 @@ public class StateHolderMixin {
                 maxField.setAccessible(true);
                 int max = (int) maxField.get(intProp);
                 BlockBehaviourCached.bites = Optional.of(max);
+                BlockBehaviourCached.bite = Optional.of(cir.getReturnValueI());
             } catch (Exception ignored) {
 
             }
