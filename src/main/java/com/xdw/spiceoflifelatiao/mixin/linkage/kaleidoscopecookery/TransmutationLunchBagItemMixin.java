@@ -1,4 +1,4 @@
-package com.xdw.spiceoflifelatiao.mixin.linkage;
+package com.xdw.spiceoflifelatiao.mixin.linkage.kaleidoscopecookery;
 
 import com.xdw.spiceoflifelatiao.linkage.IFoodItem;
 import net.minecraft.world.entity.LivingEntity;

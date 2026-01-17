@@ -8,8 +8,11 @@
     "IItemExtensionMixin",
     "PlayerMixin",
     "StateHolderMixin",
-    "linkage.FoodContainerItemMixin",
-    "linkage.TransmutationLunchBagItemMixin"
+    "linkage.kaleidoscopecookery.TransmutationLunchBagItemMixin",
+    "linkage.solcarrot.FoodListMixin",
+    "linkage.solcarrot.FoodTrackerMixin",
+    "linkage.solcarrot.MaxHealthHandler",
+    "linkage.solonion.FoodContainerItemMixin"
   ],
   "injectors": {
     "defaultRequire": 1

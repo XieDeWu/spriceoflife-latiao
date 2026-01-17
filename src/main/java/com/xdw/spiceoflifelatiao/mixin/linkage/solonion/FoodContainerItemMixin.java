@@ -1,4 +1,4 @@
-package com.xdw.spiceoflifelatiao.mixin.linkage;
+package com.xdw.spiceoflifelatiao.mixin.linkage.solonion;
 
 import com.xdw.spiceoflifelatiao.cached.FoodPropertiesCached;
 import com.xdw.spiceoflifelatiao.linkage.IFoodItem;
