@@ -18,10 +18,11 @@ public class FoodPropertiesCached {
     }
 
     public static void addCached(Player player,ItemStack stack, FoodProperties value){
-        values.put(getID(player,stack),Optional.ofNullable(value));
+        var id = getID(player,stack);
+        values.put(id,Optional.ofNullable(value));
     }
 
-    private static String getID(Player player,ItemStack stack){
+    public static String getID(Player player,ItemStack stack){
         var play = player.getStringUUID().hashCode();
         var itemID = stack.getItem().toString().replace(" ", "").hashCode();
         var gap = LevelCalcCached.gameTime /6;

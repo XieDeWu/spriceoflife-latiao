@@ -1,5 +1,6 @@
 package com.xdw.spiceoflifelatiao.util;
 
+import com.xdw.spiceoflifelatiao.cached.BlockBehaviourCached;
 import com.xdw.spiceoflifelatiao.cached.ConfigCached;
 import com.xdw.spiceoflifelatiao.cached.EatFormulaCalcCached;
 import com.xdw.spiceoflifelatiao.cached.PlayerCalcCached;
@@ -27,10 +28,10 @@ public record EatFormulaContext(
 ) {
 
     public static Optional<EatFormulaContext> from(Player player, ItemStack item,FoodProperties foodProperties){
-        return EatFormulaCalcCached.getCached(player,item).or(()->{
+        return EatFormulaCalcCached.getCached(player,item, BlockBehaviourCached.flag ? 1 : 0).or(()->{
             var value = EatFormulaContext.calc(player, item,foodProperties);
             value = configLimit(value,foodProperties);
-            EatFormulaCalcCached.addCached(player,item,value);
+            EatFormulaCalcCached.addCached(player,item,value,BlockBehaviourCached.flag ? 1 : 0);
             return value;
         });
     }

@@ -70,7 +70,7 @@ public abstract class FoodDataMixin implements IEatHistoryAcessor {
             hunger.set(Math.round(expectHunger));
             saturation.set(x.saturation());
             BlockBehaviourCached.realHunger = Optional.of(hunger.get());
-            BlockBehaviourCached.realSaturation = Optional.of(x.saturation());
+            BlockBehaviourCached.realSaturation = Optional.of(saturation.get());
             BlockBehaviourCached.hungerRoundErr = Optional.of(expectHunger - hunger.get());
         });
         this.foodLevel = Mth.clamp(hunger.get() + this.foodLevel, 0, 20);

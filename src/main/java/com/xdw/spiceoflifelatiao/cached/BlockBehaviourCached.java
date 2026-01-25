@@ -1,5 +1,7 @@
 package com.xdw.spiceoflifelatiao.cached;
 
+import com.xdw.spiceoflifelatiao.attachments.LevelOrgFoodValue;
+import com.xdw.spiceoflifelatiao.attachments.ModAttachments;
 import com.xdw.spiceoflifelatiao.util.EatFormulaContext;
 import com.xdw.spiceoflifelatiao.util.EatHistory;
 import com.xdw.spiceoflifelatiao.util.IEatHistoryAcessor;
@@ -32,8 +34,28 @@ public class BlockBehaviourCached {
     }
     public static void end(){
         isFlagOk().ifPresent(it->{
-            int hash = EatHistory.getFoodHash(item.get().getItem());
-            it.addEatHistory_Mem(hash, (float)realHunger.get(), realSaturation.get(), 1.0f/(float)bites.get(), hungerRoundErr.get());
+            int foodHash = EatHistory.getFoodHash(item.get().getItem());
+//            添加饮食记录
+            it.addEatHistory_Mem(foodHash, (float)realHunger.get(), realSaturation.get(), 1.0f/(float)bites.get(), hungerRoundErr.get());
+//            归档方块食物原始值
+            var curHash = LevelOrgFoodValue.getFoodHash(item.get().getItem(),bite.get());
+            var isChanged = false;
+            var level = player.get().level();
+            var orgDataRecord = level.getData(ModAttachments.LEVEL_ORG_FOOD_VALUE);
+            var hash = orgDataRecord.hash;
+            var hunger = orgDataRecord.hunger;
+            var saturation = orgDataRecord.saturation;
+            var bites1 = orgDataRecord.bites;
+            if(!hash.contains(curHash)) isChanged = true;
+            if(hunger.getOrDefault(curHash,0F) != (float)addHunger.get()) isChanged = true;
+            if(saturation.getOrDefault(curHash,0F) != (float)addSaturation.get()) isChanged = true;
+            if(isChanged){
+                hash.add(curHash);
+                hunger.put(curHash,(float)addHunger.get());
+                saturation.put(curHash,addSaturation.get());
+                bites1.put(curHash,bites.get());
+                level.setData(ModAttachments.LEVEL_ORG_FOOD_VALUE,orgDataRecord);
+            }
 //            为方块食物第一口添加洋葱版食物多样性
             if(bite.get() == 0){
                 item.get().set(DataComponents.FOOD,new FoodProperties(
