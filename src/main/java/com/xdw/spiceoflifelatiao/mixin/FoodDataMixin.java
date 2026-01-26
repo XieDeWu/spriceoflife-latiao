@@ -97,11 +97,15 @@ public abstract class FoodDataMixin implements IEatHistoryAcessor {
                 })
                 .ifPresent(eatHistory -> {
                     int length = ConfigCached.HISTORY_LENGTH_LONG;
-                    int size = EatFormulaContext.findSumIndex(eatHistory.eaten(),length).orElse(length);
-                    queueFood = eatHistory.foodHash().stream().limit(size).collect(Collectors.toCollection(ArrayList::new));
-                    queueHunger = eatHistory.hunger().stream().limit(size).collect(Collectors.toCollection(ArrayList::new));
-                    queueSaturation = eatHistory.saturation().stream().limit(size).collect(Collectors.toCollection(ArrayList::new));
-                    queueEaten = eatHistory.eaten().stream().limit(size).collect(Collectors.toCollection(ArrayList::new));
+                    int size = EatFormulaContext.findDynSize(eatHistory.eaten(),length);
+                    eatHistory.foodHash().subList(size,eatHistory.foodHash().size()).clear();
+                    eatHistory.hunger().subList(size,eatHistory.hunger().size()).clear();
+                    eatHistory.saturation().subList(size,eatHistory.saturation().size()).clear();
+                    eatHistory.eaten().subList(size,eatHistory.eaten().size()).clear();
+                    queueFood = eatHistory.foodHash();
+                    queueHunger = eatHistory.hunger();
+                    queueSaturation = eatHistory.saturation();
+                    queueEaten = eatHistory.eaten();
                     hungerRoundErr = eatHistory.hungerRoundErr();
                 });
     }
@@ -115,11 +119,11 @@ public abstract class FoodDataMixin implements IEatHistoryAcessor {
         this.hungerRoundErr = hungerRoundErr;
 
         int length = ConfigCached.HISTORY_LENGTH_LONG;
-        int size = EatFormulaContext.findSumIndex(queueEaten,length).orElse(length);
-        queueFood = queueFood.stream().limit(size).collect(Collectors.toCollection(ArrayList::new));
-        queueHunger = queueHunger.stream().limit(size).collect(Collectors.toCollection(ArrayList::new));
-        queueSaturation = queueSaturation.stream().limit(size).collect(Collectors.toCollection(ArrayList::new));
-        queueEaten = queueEaten.stream().limit(size).collect(Collectors.toCollection(ArrayList::new));
+        int size = EatFormulaContext.findDynSize(queueEaten,length);
+        queueFood.subList(size,queueFood.size()).clear();
+        queueHunger.subList(size,queueHunger.size()).clear();
+        queueSaturation.subList(size,queueSaturation.size()).clear();
+        queueEaten.subList(size,queueEaten.size()).clear();
         return Optional.empty();
     }
 }

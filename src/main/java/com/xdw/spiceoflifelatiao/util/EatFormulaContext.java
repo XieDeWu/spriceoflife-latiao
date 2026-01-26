@@ -64,9 +64,9 @@ public record EatFormulaContext(
         Optional<EatHistory> eatHistory = Optional.ofNullable(((IEatHistoryAcessor) foodData)
                 .getEatHistory_Mem());
         int _lengthLong = ConfigCached.HISTORY_LENGTH_LONG;
-        int lengthLong = eatHistory.flatMap(x -> findSumIndex(x.eaten(), _lengthLong)).orElse(_lengthLong);
+        int lengthLong = eatHistory.map(x -> findDynSize(x.eaten(), _lengthLong)).orElse(_lengthLong);
         int _lengthShort = ConfigCached.HISTORY_LENGTH_SHORT;
-        int __lengthShort = eatHistory.flatMap(x -> findSumIndex(x.eaten(), _lengthShort)).orElse(_lengthShort);
+        int __lengthShort = eatHistory.map(x -> findDynSize(x.eaten(), _lengthShort)).orElse(_lengthShort);
         int lengthShort = Math.min(__lengthShort,lengthLong);
 //        Optional<FoodProperties> foodProperties = _item.flatMap(x-> Optional.ofNullable(x.get(DataComponents.FOOD)));
         Optional<FoodProperties> foodProperties = Optional.ofNullable(_foodProperties);
@@ -219,16 +219,16 @@ public record EatFormulaContext(
         return build;
     }
 
-    public static Optional<Integer> findSumIndex(List<Float> arr, float target) {
-        float sum = 0;
-        int index = 0;
+    public static int findDynSize(List<Float> arr, float target) {
+        int size = 0;
+        float reduce = 0;
         for (Float value : arr) {
-            sum += value;
-            if (sum >= target) {
-                return Optional.of(index);
+            size++;
+            reduce += value;
+            if (reduce >= target) {
+                return size;
             }
-            index++;
         }
-        return Optional.empty();
+        return size;
     }
 }
