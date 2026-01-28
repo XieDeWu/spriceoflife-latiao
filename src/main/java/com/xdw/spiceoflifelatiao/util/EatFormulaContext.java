@@ -18,6 +18,7 @@ import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.IntStream;
+import java.util.stream.Stream;
 
 public record EatFormulaContext(
         @NotNull Float loss,
@@ -28,10 +29,15 @@ public record EatFormulaContext(
 ) {
 
     public static Optional<EatFormulaContext> from(Player player, ItemStack item,FoodProperties foodProperties){
-        return EatFormulaCalcCached.getCached(player,item, BlockBehaviourCached.flag ? 1 : 0).or(()->{
+        int flag = Stream.of(
+                foodProperties != null ? foodProperties.nutrition() : 0,
+                Math.round(foodProperties != null ? foodProperties.saturation() : 0),
+                BlockBehaviourCached.flag ? 0 : 1
+        ).reduce(1, (h, v) -> 31 * h + v);
+        return EatFormulaCalcCached.getCached(player,item,flag).or(()->{
             var value = EatFormulaContext.calc(player, item,foodProperties);
             value = configLimit(value,foodProperties);
-            EatFormulaCalcCached.addCached(player,item,value,BlockBehaviourCached.flag ? 1 : 0);
+            EatFormulaCalcCached.addCached(player,item,value,flag);
             return value;
         });
     }

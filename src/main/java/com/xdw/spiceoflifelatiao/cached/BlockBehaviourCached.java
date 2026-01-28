@@ -13,6 +13,7 @@ import net.neoforged.neoforge.event.EventHooks;
 
 import java.util.List;
 import java.util.Optional;
+import java.util.concurrent.atomic.AtomicInteger;
 
 public class BlockBehaviourCached {
     public static boolean flag = false;
@@ -27,6 +28,9 @@ public class BlockBehaviourCached {
     public static Optional<Float> realSaturation = Optional.empty();
     public static Optional<Float> hungerRoundErr = Optional.empty();
     private static Optional<EatFormulaContext> context = Optional.empty();
+    public static int accessOrderGetValue = 0;
+    public static int accessOrderAdd = 0;
+    public static AtomicInteger numSeq = new AtomicInteger(1);
     public static void start(Optional<Player> _player,Optional<ItemStack> _item){
         flag = true;
         player = _player;
@@ -45,7 +49,8 @@ public class BlockBehaviourCached {
             var hash = orgDataRecord.hash;
             var hunger = orgDataRecord.hunger;
             var saturation = orgDataRecord.saturation;
-            var bites1 = orgDataRecord.bites;
+            var bites = orgDataRecord.bites;
+            var bitesOffset = orgDataRecord.bitesOffset;
             if(!hash.contains(curHash)) isChanged = true;
             if(hunger.getOrDefault(curHash,0F) != (float)addHunger.get()) isChanged = true;
             if(saturation.getOrDefault(curHash,0F) != (float)addSaturation.get()) isChanged = true;
@@ -53,17 +58,18 @@ public class BlockBehaviourCached {
                 hash.add(curHash);
                 hunger.put(curHash,(float)addHunger.get());
                 saturation.put(curHash,addSaturation.get());
-                bites1.put(curHash,bites.get());
+                bites.put(curHash, BlockBehaviourCached.bites.get());
+                bitesOffset.put(curHash, BlockBehaviourCached.accessOrderAdd == 1 ? 1 : 0);
                 level.setData(ModAttachments.LEVEL_ORG_FOOD_VALUE,orgDataRecord);
             }
 //            为方块食物第一口添加洋葱版食物多样性
             if(bite.get() == 0){
                 item.get().set(DataComponents.FOOD,new FoodProperties(
-                        addHunger.orElse(0)*bites.get(),
-                        addSaturation.orElse(0f)*bites.get(),
+                        addHunger.orElse(0)* BlockBehaviourCached.bites.get(),
+                        addSaturation.orElse(0f)* BlockBehaviourCached.bites.get(),
                         foodProperties.map(FoodProperties::canAlwaysEat).orElse(false),
                         foodProperties.map(FoodProperties::eatSeconds).orElse(1.6f),
-                        foodProperties.map(FoodProperties::usingConvertsTo).orElse(Optional.empty()),
+                        foodProperties.flatMap(FoodProperties::usingConvertsTo),
                         foodProperties.map(FoodProperties::effects).orElse(List.of())
                 ));
                 EventHooks.onItemUseFinish(player.get(), item.get(), 0, ItemStack.EMPTY);
@@ -96,6 +102,9 @@ public class BlockBehaviourCached {
         realHunger = Optional.empty();
         realSaturation = Optional.empty();
         hungerRoundErr = Optional.empty();
+        accessOrderGetValue = 0;
+        accessOrderAdd = 0;
+        numSeq = new AtomicInteger(1);
     }
 
     public static Optional<EatFormulaContext> getContext(FoodProperties defaultFoodInfo){
