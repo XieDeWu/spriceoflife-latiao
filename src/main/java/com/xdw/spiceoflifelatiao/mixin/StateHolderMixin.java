@@ -27,6 +27,7 @@ public class StateHolderMixin {
                 int max = (int) maxField.get(intProp);
                 BlockBehaviourCached.bites = BlockBehaviourCached.bites.or(()-> Optional.of(max));
                 BlockBehaviourCached.bite = BlockBehaviourCached.bite.or(()->Optional.of(cir.getReturnValueI()));
+                if(BlockBehaviourCached.accessOrderGetValue == 0) BlockBehaviourCached.accessOrderGetValue = BlockBehaviourCached.numSeq.getAndIncrement();
             } catch (Exception ignored) {
 
             }

@@ -21,6 +21,12 @@ repositories {
     // Add here additional repositories if required by some of the dependencies below.
     mavenLocal()
     maven { url "https://maven.ryanliptak.com/" }
+    maven {
+        url "https://cursemaven.com"
+        content {
+            includeGroup "curse.maven"
+        }
+    }
 }
 
 base {
@@ -126,6 +132,8 @@ dependencies {
     additionalRuntimeClasspath "net.objecthunter:exp4j:0.4.8"
     runtimeOnly "squeek.appleskin:appleskin-neoforge:mc1.21-3.0.7"
     implementation fileTree(dir: "libs",includes: ["*.jar"],excludes: ["*-sources.jar"])
+
+    compileOnly "curse.maven:jade-324717:7428884"
 
     // Example optional mod dependency with JEI
     // The JEI API is declared for compile time use, while the full JEI artifact is used at runtime

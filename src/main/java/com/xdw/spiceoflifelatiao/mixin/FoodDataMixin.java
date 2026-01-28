@@ -21,7 +21,6 @@ import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
-import java.util.stream.Collectors;
 
 
 @Mixin(FoodData.class)
@@ -75,6 +74,7 @@ public abstract class FoodDataMixin implements IEatHistoryAcessor {
         });
         this.foodLevel = Mth.clamp(hunger.get() + this.foodLevel, 0, 20);
         this.saturationLevel = Mth.clamp(saturation.get() + this.saturationLevel, 0.0F, (float)this.foodLevel);
+        if(BlockBehaviourCached.flag && BlockBehaviourCached.accessOrderAdd == 0) BlockBehaviourCached.accessOrderAdd = BlockBehaviourCached.numSeq.getAndIncrement();
     }
 
     @Override
