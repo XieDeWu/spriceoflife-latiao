@@ -28,18 +28,20 @@ public record EatFormulaContext(
         @NotNull Float hungerAccRoundErr
 ) {
 
-    public static Optional<EatFormulaContext> from(Player player, ItemStack item,FoodProperties foodProperties){
-        int flag = Stream.of(
+    public static Optional<EatFormulaContext> from(Player player, ItemStack item,FoodProperties foodProperties,int flag){
+        int _flag = Stream.of(
                 foodProperties != null ? foodProperties.nutrition() : 0,
                 Math.round(foodProperties != null ? foodProperties.saturation() : 0),
-                BlockBehaviourCached.flag ? 0 : 1
+                BlockBehaviourCached.flag ? 0 : 1,
+                flag
         ).reduce(1, (h, v) -> 31 * h + v);
-        return EatFormulaCalcCached.getCached(player,item,flag).or(()->{
-            var value = EatFormulaContext.calc(player, item,foodProperties);
-            value = configLimit(value,foodProperties);
-            EatFormulaCalcCached.addCached(player,item,value,flag);
-            return value;
-        });
+        return EatFormulaCalcCached.getCached(player, item, _flag)
+                .or(() -> {
+                    var value = EatFormulaContext.calc(player, item, foodProperties);
+                    value = configLimit(value, foodProperties);
+                    EatFormulaCalcCached.addCached(player, item, value, _flag);
+                    return value;
+                });
     }
     public static Optional<EatFormulaContext> configLimit(Optional<EatFormulaContext> value,FoodProperties defaultFoodProperties){
         if(value.isEmpty()) return value;

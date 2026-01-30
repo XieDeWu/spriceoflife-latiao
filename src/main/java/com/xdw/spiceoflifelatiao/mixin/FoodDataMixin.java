@@ -1,7 +1,9 @@
 package com.xdw.spiceoflifelatiao.mixin;
 
+import com.xdw.spiceoflifelatiao.attachments.LevelOrgFoodValue;
 import com.xdw.spiceoflifelatiao.cached.BlockBehaviourCached;
 import com.xdw.spiceoflifelatiao.cached.ConfigCached;
+import com.xdw.spiceoflifelatiao.cached.LevelCalcCached;
 import com.xdw.spiceoflifelatiao.util.EatFormulaContext;
 import com.xdw.spiceoflifelatiao.util.EatHistory;
 import com.xdw.spiceoflifelatiao.util.IEatHistoryAcessor;
@@ -9,6 +11,7 @@ import net.minecraft.nbt.CompoundTag;
 import net.minecraft.util.Mth;
 import net.minecraft.world.food.FoodData;
 import net.minecraft.world.food.FoodProperties;
+import net.minecraft.world.phys.Vec3;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Shadow;
 import org.spongepowered.asm.mixin.Unique;
@@ -44,9 +47,9 @@ public abstract class FoodDataMixin implements IEatHistoryAcessor {
                     .ifPresent(this::setEatHistory_Bin);
         }
     }
-    @Inject(method = "eat*", at = @At("TAIL"))
+    @Inject(method = "eat*", at = @At("HEAD"))
     public void eat(FoodProperties foodProperties, CallbackInfo ci) {
-        if(BlockBehaviourCached.flag) BlockBehaviourCached.foodProperties = Optional.ofNullable(foodProperties);
+        BlockBehaviourCached.foodProperties = Optional.ofNullable(foodProperties);
     }
 
 
@@ -64,13 +67,12 @@ public abstract class FoodDataMixin implements IEatHistoryAcessor {
                 BlockBehaviourCached.foodProperties.map(FoodProperties::eatSeconds).orElse(1.6f),
                 BlockBehaviourCached.foodProperties.flatMap(FoodProperties::usingConvertsTo),
                 BlockBehaviourCached.foodProperties.map(FoodProperties::effects).orElse(List.of())
-        )).ifPresent(x->{
-            var expectHunger = x.hunger()+x.hungerAccRoundErr();
-            hunger.set(Math.round(expectHunger));
-            saturation.set(x.saturation());
+        ), (int)LevelCalcCached.gameTime).ifPresent(it->{
+            hunger.set((int) Math.round(it.x));
+            saturation.set((float) it.y);
             BlockBehaviourCached.realHunger = Optional.of(hunger.get());
             BlockBehaviourCached.realSaturation = Optional.of(saturation.get());
-            BlockBehaviourCached.hungerRoundErr = Optional.of(expectHunger - hunger.get());
+            BlockBehaviourCached.hungerRoundErr = Optional.of((float) (it.x - hunger.get()));
         });
         this.foodLevel = Mth.clamp(hunger.get() + this.foodLevel, 0, 20);
         this.saturationLevel = Mth.clamp(saturation.get() + this.saturationLevel, 0.0F, (float)this.foodLevel);

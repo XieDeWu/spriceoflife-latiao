@@ -13,6 +13,8 @@ import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.state.properties.IntegerProperty;
 import net.minecraft.world.phys.HitResult;
 import net.minecraft.world.phys.Vec3;
+import net.neoforged.api.distmarker.Dist;
+import net.neoforged.api.distmarker.OnlyIn;
 import org.jetbrains.annotations.NotNull;
 import snownee.jade.api.*;
 import snownee.jade.api.config.IPluginConfig;
@@ -23,6 +25,8 @@ import javax.annotation.Nullable;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Stream;
 
 
@@ -40,12 +44,13 @@ public class FoodInfoPlugin implements IWailaPlugin, IBlockComponentProvider {
     public static Optional<Player> player = Optional.empty();
     public static Optional<ItemStack> stack = Optional.empty();
     public static Optional<Integer> bite = Optional.empty();
-
+    private static final AtomicInteger serialNumber = new AtomicInteger(0);
+    @OnlyIn(Dist.CLIENT)
     public void registerClient(IWailaClientRegistration registration) {
         registration.registerBlockComponent(this, Block.class);
         registration.addRayTraceCallback(10000, (HitResult hitResult, @Nullable Accessor<?> accessor, @Nullable Accessor<?> originalAccessor) -> {
-            if (accessor == null) return null;
-            if (!(accessor instanceof BlockAccessor acc)) return null;
+            if (originalAccessor instanceof EntityAccessor) return accessor;
+            if (!(accessor instanceof BlockAccessor acc)) return accessor;
             init();
             player = Optional.ofNullable(accessor.getPlayer());
             if (player.isEmpty()) return null;
@@ -67,63 +72,71 @@ public class FoodInfoPlugin implements IWailaPlugin, IBlockComponentProvider {
     }
 
     @Override
+    @OnlyIn(Dist.CLIENT)
     public void appendTooltip(ITooltip iTooltip, BlockAccessor blockAccessor, IPluginConfig iPluginConfig) {
         if (player.isEmpty() || stack.isEmpty() || bite.isEmpty()) return;
         var checked = LevelOrgFoodValue.checkBlockFoodInfo(player.get(), stack.get());
         var itemFoodInfo = !checked ? stack.get().get(DataComponents.FOOD) : null;
-        Vec3 blockFoodInfo = LevelOrgFoodValue.getBlockFoodInfo(player.get(), stack.get(), itemFoodInfo, bite.get());
+        Vec3 blockFoodInfo = LevelOrgFoodValue.getBlockFoodInfo(player.get(), stack.get(), bite.get(), itemFoodInfo, true, serialNumber.incrementAndGet());
         List<@NotNull IElement> hud_hunger = new ArrayList<>();
         List<@NotNull IElement> hud_saturation = new ArrayList<>();
         List<@NotNull IElement> hud_warn = new ArrayList<>();
         if (blockFoodInfo.x > 0 || blockFoodInfo.y > 0) {
+            List<@NotNull IElement> tempHudHunger = hud_hunger;
+            AtomicBoolean needRevHunger = new AtomicBoolean(true);
             long ignored1 = Stream.iterate(Math.round(blockFoodInfo.x), s -> s > 0F, s -> {
                 if (s > 20) {
-                    hud_hunger.add(ICON_HUNGER);
-                    hud_hunger.add(ElementHelper.INSTANCE.spacer(2,9));
-                    hud_hunger.add(ElementHelper.INSTANCE.text(Component.literal("x" + s/2).withStyle(ChatFormatting.GOLD)));
+                    needRevHunger.set(false);
+                    tempHudHunger.add(ICON_HUNGER);
+                    tempHudHunger.add(ElementHelper.INSTANCE.spacer(2, 9));
+                    tempHudHunger.add(ElementHelper.INSTANCE.text(Component.literal("x" + (int) Math.ceil((float) Math.abs(s) / 2.0F)).withStyle(ChatFormatting.GOLD)));
                     return 0L;
                 } else if (s >= 2) {
-                    hud_hunger.add(ICON_HUNGER);
+                    tempHudHunger.add(ICON_HUNGER);
                     return s - 2;
                 }
-                hud_hunger.add(ICON_HUNGER_HALF);
+                tempHudHunger.add(ICON_HUNGER_HALF);
                 return s - 2;
             }).count();
+            hud_hunger = needRevHunger.get() ? tempHudHunger.reversed() : tempHudHunger;
+
+            List<@NotNull IElement> tempHudSaturation = hud_saturation;
+            AtomicBoolean needRevSaturation = new AtomicBoolean(true);
             var hud2 = Stream.iterate(blockFoodInfo.y, s -> s > 0F, s -> {
                 if (s > 20) {
-                    hud_saturation.add(ICON_SATURATION);
-                    hud_saturation.add(ElementHelper.INSTANCE.spacer(2,7));
-                    hud_saturation.add(ElementHelper.INSTANCE.text(Component.literal("x" + Math.round(s/2)).withStyle(ChatFormatting.GOLD)));
+                    needRevSaturation.set(false);
+                    tempHudSaturation.add(ICON_SATURATION);
+                    tempHudSaturation.add(ElementHelper.INSTANCE.spacer(2, 7));
+                    tempHudSaturation.add(ElementHelper.INSTANCE.text(Component.literal("x" + (int) Math.ceil((float) Math.abs(s) / 2.0F)).withStyle(ChatFormatting.GOLD)));
                     return 0D;
                 } else if (s >= 2) {
-                    hud_saturation.add(ICON_SATURATION);
+                    tempHudSaturation.add(ICON_SATURATION);
                     return s - 2;
                 } else if (s >= 1.5) {
-                    hud_saturation.add(ICON_SATURATION_HALF_MORE);
+                    tempHudSaturation.add(ICON_SATURATION_HALF_MORE);
                     return s - 2;
                 } else if (s >= 1) {
-                    hud_saturation.add(ICON_SATURATION_HALF);
+                    tempHudSaturation.add(ICON_SATURATION_HALF);
                     return s - 2;
                 }
-                hud_saturation.add(ICON_SATURATION_QRT);
+                tempHudSaturation.add(ICON_SATURATION_QRT);
                 return s - 2;
             });
-            if(Minecraft.getInstance().getResourceManager().getResource(RES_APPLESKIN).isPresent()) hud2.count();
+            if (Minecraft.getInstance().getResourceManager().getResource(RES_APPLESKIN).isPresent()) hud2.count();
+            hud_saturation = needRevSaturation.get() ? tempHudSaturation.reversed() : tempHudSaturation;
+            if (!checked) {
+                hud_warn.add(ElementHelper.INSTANCE.text(Component.translatable(itemFoodInfo == null
+                        ? "spiceoflifelatiao.tooltip.block_food.uncollected"
+                        : "spiceoflifelatiao.tooltip.block_food.uncollected.food_item"
+                ).withStyle(ChatFormatting.DARK_RED)));
+            }
+            iTooltip.add(hud_hunger);
+            iTooltip.add(hud_saturation);
+            iTooltip.add(hud_warn);
         }
-        var ex = itemFoodInfo != null ? "此方块饮食数据未采集"+",默认显示物品数据" : "";
-        if(!checked) {
-            hud_warn.add(ElementHelper.INSTANCE.text(Component.translatable(itemFoodInfo == null
-                    ? "spiceoflifelatiao.tooltip.block_food.uncollected"
-                    : "spiceoflifelatiao.tooltip.block_food.uncollected.food_item"
-            ).withStyle(ChatFormatting.DARK_RED)));
-        }
-        iTooltip.add(hud_hunger);
-        iTooltip.add(hud_saturation);
-        iTooltip.add(hud_warn);
     }
-
     @Override
-    public ResourceLocation getUid() {
+    public ResourceLocation getUid () {
         return FOOD_INFO;
     }
 }

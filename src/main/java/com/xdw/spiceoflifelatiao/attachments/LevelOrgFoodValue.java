@@ -3,16 +3,21 @@ package com.xdw.spiceoflifelatiao.attachments;
 import com.mojang.serialization.Codec;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
 import com.xdw.spiceoflifelatiao.util.EatFormulaContext;
+import net.minecraft.client.Minecraft;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.network.codec.StreamCodec;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.food.FoodProperties;
+import net.minecraft.world.item.BlockItem;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.world.level.block.state.properties.IntegerProperty;
 import net.minecraft.world.phys.Vec3;
 import org.jetbrains.annotations.NotNull;
 
+import java.lang.reflect.Field;
 import java.util.*;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.IntStream;
@@ -26,21 +31,49 @@ public final class LevelOrgFoodValue{
     public static int getFoodHash(Item item, int bite){
         return (BuiltInRegistries.ITEM.getId(item) << 8) | (bite & 0xFF);
     }
-    public static Vec3 getBlockFoodInfo(@NotNull Player player, @NotNull ItemStack stack,FoodProperties _defaultFoodInfo, int bite){
+    public static Vec3 getBlockFoodInfo(@NotNull Player player, @NotNull ItemStack stack,int bite,FoodProperties _defaultFoodInfo,boolean sliceCalc,int flag){
         Optional<FoodProperties> defInfo = Optional.ofNullable(_defaultFoodInfo);
-        LevelOrgFoodValue data = player.level().getData(ModAttachments.LEVEL_ORG_FOOD_VALUE);
-        var hash0 = LevelOrgFoodValue.getFoodHash(stack.getItem(),0);
-        var hunger0 = Optional.ofNullable(data.hunger.get(hash0)).orElse((float)defInfo.map(FoodProperties::nutrition).orElse(0));
-        var saturation0 = Optional.ofNullable(data.saturation.get(hash0)).orElse(defInfo.map(FoodProperties::saturation).orElse(0F));
-        var bites = Optional.ofNullable(data.bites.get(hash0)).orElse(1);
+            if (!player.isAddedToLevel() || player.tickCount <= 0) return defInfo.map(
+                    it -> new Vec3(it.nutrition(), it.saturation(), it.eatSeconds()))
+                    .orElse(new Vec3(0, 0, 1.6F));
+        LevelOrgFoodValue data = sliceCalc ? player.level().getData(ModAttachments.LEVEL_ORG_FOOD_VALUE) : new LevelOrgFoodValue();
+        int hash0 = LevelOrgFoodValue.getFoodHash(stack.getItem(),0);
+        float hunger0 = Optional.ofNullable(data.hunger.get(hash0)).orElse((float)defInfo.map(FoodProperties::nutrition).orElse(0));
+        float saturation0 = Optional.ofNullable(data.saturation.get(hash0)).orElse(defInfo.map(FoodProperties::saturation).orElse(0F));
+        int bites = Optional.ofNullable(data.bites.get(hash0)).orElse(1);
         int bitesOffset = Optional.ofNullable(data.bitesOffset.get(hash0)).orElse(0);
+        if(sliceCalc && !data.hash.contains(hash0)){
+            if(stack.getItem() instanceof BlockItem bi) {
+                BlockState blockState = bi.getBlock().defaultBlockState();
+                Optional<Integer> defaultBitesMax = blockState.getValues().values().stream().map(comparable -> {
+                    if(comparable instanceof IntegerProperty ip && ip.getName().equals("bites")){
+                        try {
+                            Field maxField = IntegerProperty.class.getDeclaredField("max");
+                            maxField.setAccessible(true);
+                            return (int)maxField.get(ip);
+                        } catch (Exception ignored) {
+
+                        }
+                    }
+                    return -1;
+                }).filter(it-> it > -1).findFirst();
+                if(defaultBitesMax.isPresent()){
+                    int defMax = defaultBitesMax.get();
+                    bites = defMax;
+                    hunger0 = hunger0 / defMax;
+                    saturation0 = saturation0 / defMax;
+                }
+            }
+        }
         AtomicReference<Optional<Float>> eat_seconds = new AtomicReference<>(Optional.empty());
         AtomicReference<Optional<Float>> hungerAccRoundErr = new AtomicReference<>(Optional.empty());
-        return IntStream.range(bite,Math.max(bite,bites+bitesOffset))
+        Float finalHunger = hunger0;
+        Float finalSaturation = saturation0;
+        return IntStream.range(bite,Math.max(bite, Math.max(bite,bites +bitesOffset)))
                 .mapToObj(it->{
                     var hashIt = LevelOrgFoodValue.getFoodHash(stack.getItem(),it);
-                    var tileHunger = Math.round(data.hunger.getOrDefault(hashIt,hunger0));
-                    var tileSaturation = data.saturation.getOrDefault(hashIt,saturation0);
+                    var tileHunger = Math.round(data.hunger.getOrDefault(hashIt, finalHunger));
+                    var tileSaturation = data.saturation.getOrDefault(hashIt, finalSaturation);
                     var calc = EatFormulaContext.from(player,stack,new FoodProperties(
                             tileHunger,
                             tileSaturation,
@@ -48,7 +81,7 @@ public final class LevelOrgFoodValue{
                             defInfo.map(FoodProperties::eatSeconds).orElse(1.6F),
                             defInfo.flatMap(FoodProperties::usingConvertsTo),
                             defInfo.map(FoodProperties::effects).orElse(List.of())
-                    ));
+                    ),flag);
                     if(hungerAccRoundErr.get().isEmpty() && calc.isPresent()) hungerAccRoundErr.set(Optional.of(calc.get().hungerAccRoundErr()));
                     if(eat_seconds.get().isEmpty() && calc.isPresent()) eat_seconds.set(Optional.of(calc.get().eat_seconds()));
                     return calc.map(c -> new Vec3(c.hunger(), c.saturation(),0)).orElseGet(() -> new Vec3(0, 0,0));

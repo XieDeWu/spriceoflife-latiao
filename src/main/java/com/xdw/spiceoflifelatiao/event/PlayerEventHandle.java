@@ -17,16 +17,14 @@ public class PlayerEventHandle {
     @SubscribeEvent
     public static void tickPlayer(net.neoforged.neoforge.event.tick.PlayerTickEvent.Post event) {
         Player player = event.getEntity();
-        if(player.isCreative() || player.isDeadOrDying()) return;
-        if(!ConfigCached.EANBLE_CHANGE) return;
-        if(!ConfigCached.EANBLE_LOSS) return;
         var id = player.getStringUUID().hashCode();
         PlayerAfkCached.addSampling(id,player.getLookAngle(), LevelCalcCached.gameTime);
         if(PlayerAfkCached.isAfk(id, LevelCalcCached.gameTime,PlayerCalcCached.hunger)) return;
         LevelCalcCached.update(player.level());
         PlayerCalcCached.update(player);
-        EatFormulaContext.from(player, ItemStack.EMPTY,null).ifPresent(x->player.causeFoodExhaustion(x.loss()));
-
+        if(ConfigCached.EANBLE_CHANGE && ConfigCached.EANBLE_LOSS){
+            EatFormulaContext.from(player, ItemStack.EMPTY,null,0).ifPresent(x->player.causeFoodExhaustion(x.loss()));
+        }
         if(LevelCalcCached.gameTime % 20 == 0){
             long oldTime = player.level().isClientSide
                     ? player.getData(ModAttachments.PLAYER_UN_SLEEPTIME.get()).player_un_sleeptime()
@@ -51,7 +49,7 @@ public class PlayerEventHandle {
         var player = event.getEntity();
         var id = player.getStringUUID().hashCode();
         var time = player.level().getDayTime();
-        var loss = EatFormulaContext.from(player,ItemStack.EMPTY,null).map(EatFormulaContext::loss).orElse(0f);
+        var loss = EatFormulaContext.from(player,ItemStack.EMPTY,null,(int)LevelCalcCached.gameTime).map(EatFormulaContext::loss).orElse(0f);
         PlayerSleepCached.addSampling(id,time,loss);
     }
     @SubscribeEvent

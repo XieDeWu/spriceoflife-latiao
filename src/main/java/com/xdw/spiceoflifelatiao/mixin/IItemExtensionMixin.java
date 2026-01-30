@@ -3,6 +3,7 @@ package com.xdw.spiceoflifelatiao.mixin;
 import com.xdw.spiceoflifelatiao.attachments.LevelOrgFoodValue;
 import com.xdw.spiceoflifelatiao.cached.ConfigCached;
 import com.xdw.spiceoflifelatiao.cached.FoodPropertiesCached;
+import com.xdw.spiceoflifelatiao.cached.LevelCalcCached;
 import com.xdw.spiceoflifelatiao.linkage.IFoodItem;
 import com.xdw.spiceoflifelatiao.util.EatHistory;
 import net.minecraft.core.component.DataComponents;
@@ -57,7 +58,7 @@ public interface IItemExtensionMixin {
         stack.setCount(Math.max(1, stack.getCount()));
         EatHistory.recentEntity
                 .map(x -> x instanceof Player p ? p : null)
-                .map(rp -> LevelOrgFoodValue.getBlockFoodInfo(rp,stack,food.get(),0))
+                .map(rp -> LevelOrgFoodValue.getBlockFoodInfo(rp,stack,0,food.get(),true, (int)LevelCalcCached.gameTime))
                 .ifPresent(vec3 -> {
                     nutrition.set((int) Math.round(vec3.x()));
                     saturation.set((float) vec3.y);

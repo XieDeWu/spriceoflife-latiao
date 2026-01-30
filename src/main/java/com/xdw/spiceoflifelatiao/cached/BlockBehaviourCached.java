@@ -9,6 +9,7 @@ import net.minecraft.core.component.DataComponents;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.food.FoodProperties;
 import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.phys.Vec3;
 import net.neoforged.neoforge.event.EventHooks;
 
 import java.util.List;
@@ -27,7 +28,7 @@ public class BlockBehaviourCached {
     public static Optional<Integer> realHunger = Optional.empty();
     public static Optional<Float> realSaturation = Optional.empty();
     public static Optional<Float> hungerRoundErr = Optional.empty();
-    private static Optional<EatFormulaContext> context = Optional.empty();
+    private static Optional<Vec3> context = Optional.empty();
     public static int accessOrderGetValue = 0;
     public static int accessOrderAdd = 0;
     public static AtomicInteger numSeq = new AtomicInteger(1);
@@ -107,12 +108,13 @@ public class BlockBehaviourCached {
         numSeq = new AtomicInteger(1);
     }
 
-    public static Optional<EatFormulaContext> getContext(FoodProperties defaultFoodInfo){
+    public static Optional<Vec3> getContext(FoodProperties defaultFoodInfo,int flag){
         if (context.isPresent()) return context;
         if (player.isPresent() && item.isPresent()){
-            context = EatFormulaContext.from(player.get(),item.get(),defaultFoodInfo);
+            context = Optional.of(LevelOrgFoodValue.getBlockFoodInfo(BlockBehaviourCached.player.get(),BlockBehaviourCached.item.get(),0,defaultFoodInfo,false,flag));
             return context;
         }
+
         return Optional.empty();
     }
 }

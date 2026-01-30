@@ -1,5 +1,6 @@
 package com.xdw.spiceoflifelatiao.mixin;
 
+import com.xdw.spiceoflifelatiao.cached.LevelCalcCached;
 import com.xdw.spiceoflifelatiao.util.EatFormulaContext;
 import com.xdw.spiceoflifelatiao.util.EatHistory;
 import com.xdw.spiceoflifelatiao.util.IEatHistoryAcessor;
@@ -21,33 +22,7 @@ import java.util.concurrent.atomic.AtomicReference;
 
 @Mixin(Player.class)
 public abstract class PlayerMixin implements IPlayerAcessor {
-    @Shadow public abstract FoodData getFoodData();
     @Shadow protected abstract float getBlockSpeedFactor();
-
-    @Shadow
-    public float oBob;
-
-    @Inject(at = @At(value = "TAIL"), method = "eat")
-    public void injected(Level pLevel, ItemStack pFood, FoodProperties pFoodProperties, CallbackInfoReturnable info) {
-        var foodData = this.getFoodData();
-        if (!(foodData instanceof IEatHistoryAcessor acessor)) return;
-        int count = pFood.getCount();
-        pFood.setCount(1);
-        Player p = (Player) (Object) this;
-        Optional<EatFormulaContext> from = EatFormulaContext.from(p, pFood,pFood.getFoodProperties(p));
-        AtomicInteger realHunger = new AtomicInteger(pFoodProperties.nutrition());
-        AtomicReference<Float> newRoundErr = new AtomicReference<>(0f);
-        from.ifPresent(x->{
-            float expectHunger = x.hunger()+x.hungerAccRoundErr();
-            int _realHunger = Math.round(expectHunger);
-            Float _accErr = expectHunger - (float)_realHunger;
-            realHunger.set(_realHunger);
-            newRoundErr.set(_accErr);
-
-        });
-        acessor.addEatHistory_Mem(EatHistory.getFoodHash(pFood.getItem()),realHunger.get()*1.0f,pFoodProperties.saturation(),1.0f,newRoundErr.get());
-        pFood.setCount(count);
-    }
 
     @Override
     public float getBlockSpeedFactor_public() {
