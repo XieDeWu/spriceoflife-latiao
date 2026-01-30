@@ -6,6 +6,7 @@
     "BlockStateBaseMixin",
     "FoodDataMixin",
     "IItemExtensionMixin",
+    "ItemMixin",
     "PlayerMixin",
     "StateHolderMixin",
     "linkage.kaleidoscopecookery.TransmutationLunchBagItemMixin",

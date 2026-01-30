@@ -46,6 +46,7 @@ public interface IItemExtensionMixin {
                 })
                 .ifPresent(food::set);
         if (!ConfigCached.EANBLE_CHANGE) return food.get();
+        if(EatHistory.recentEntity.isPresent() && !(EatHistory.recentEntity.get() instanceof Player)) return food.get();
         if(food.get() == null
                 && EatHistory.recentEntity.isPresent()
                 && EatHistory.recentEntity.get() instanceof Player _p
