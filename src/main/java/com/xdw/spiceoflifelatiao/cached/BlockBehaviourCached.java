@@ -2,10 +2,11 @@ package com.xdw.spiceoflifelatiao.cached;
 
 import com.xdw.spiceoflifelatiao.attachments.LevelOrgFoodValue;
 import com.xdw.spiceoflifelatiao.attachments.ModAttachments;
-import com.xdw.spiceoflifelatiao.util.EatFormulaContext;
 import com.xdw.spiceoflifelatiao.util.EatHistory;
 import com.xdw.spiceoflifelatiao.util.IEatHistoryAcessor;
 import net.minecraft.core.component.DataComponents;
+import net.minecraft.core.registries.BuiltInRegistries;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.food.FoodProperties;
 import net.minecraft.world.item.ItemStack;
@@ -13,7 +14,9 @@ import net.minecraft.world.phys.Vec3;
 import net.neoforged.neoforge.event.EventHooks;
 
 import java.util.List;
+import java.util.Objects;
 import java.util.Optional;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 
 public class BlockBehaviourCached {
@@ -22,6 +25,8 @@ public class BlockBehaviourCached {
     public static Optional<ItemStack> item = Optional.empty();
     public static Optional<Integer> bites = Optional.empty();
     public static Optional<Integer> bite = Optional.empty();
+    public static Optional<Integer> type = Optional.empty();
+    public static Optional<ItemStack> usingConvertsTo = Optional.empty();
     public static Optional<FoodProperties> foodProperties = Optional.empty();
     public static Optional<Integer> addHunger = Optional.empty();
     public static Optional<Float> addSaturation = Optional.empty();
@@ -38,31 +43,86 @@ public class BlockBehaviourCached {
         item = _item;
     }
     public static void end(){
+//            方块食物与分装食物
+        if (player.isPresent() && item.isPresent() && bite.isPresent() && bites.isPresent()) {
+            var defHash = LevelOrgFoodValue.getFoodHash(item.get().getItem(), null);
+            var curHash = LevelOrgFoodValue.getFoodHash(item.get().getItem(), bite.get());
+            var level = player.get().level();
+            var data = level.getData(ModAttachments.LEVEL_ORG_FOOD_VALUE);
+
+            AtomicBoolean isChanged = new AtomicBoolean(false);
+
+            // === hash ===
+            if (!data.hash.contains(defHash)) {
+                data.hash.add(defHash);
+                isChanged.set(true);
+            }
+            if (!data.hash.contains(curHash)) {
+                data.hash.add(curHash);
+                isChanged.set(true);
+            }
+
+            // === hunger ===
+            addHunger.ifPresent(newHunger -> {
+                Float oldHunger = data.hunger.get(curHash);
+                if (!Objects.equals(oldHunger, newHunger.floatValue())) {
+                    data.hunger.put(curHash, newHunger.floatValue());
+                    isChanged.set(true);
+                }
+            });
+
+            // === saturation ===
+            addSaturation.ifPresent(newSaturation -> {
+                Float oldSaturation = data.saturation.get(curHash);
+                if (!Objects.equals(oldSaturation, newSaturation)) {
+                    data.saturation.put(curHash, newSaturation);
+                    isChanged.set(true);
+                }
+            });
+
+            // === bites ===
+            int newBites = BlockBehaviourCached.bites.get();
+            if (!Objects.equals(data.bites.get(defHash), newBites)) {
+                data.bites.put(defHash, newBites);
+                isChanged.set(true);
+            }
+
+            // === bitesOffset ===
+            int newOffset = BlockBehaviourCached.accessOrderAdd == 1 ? 1 : 0;
+            if (!Objects.equals(data.bitesOffset.get(defHash), newOffset)) {
+                data.bitesOffset.put(defHash, newOffset);
+                isChanged.set(true);
+            }
+
+            // === bitesType ===
+            type.ifPresent(newType -> {
+                var oldType = data.bitesType.get(defHash);
+                if (!Objects.equals(oldType, newType)) {
+                    data.bitesType.put(defHash, newType);
+                    isChanged.set(true);
+                }
+            });
+
+            // === usingConvertsTo ===
+            BlockBehaviourCached.usingConvertsTo.ifPresent(stack -> {
+                ResourceLocation rl = BuiltInRegistries.ITEM.getKey(stack.getItem());
+                ResourceLocation old = data.usingConvertsTo.get(curHash);
+                if (!Objects.equals(old, rl)) {
+                    data.usingConvertsTo.put(curHash, rl);
+                    isChanged.set(true);
+                }
+            });
+
+            if (isChanged.get()) {
+                level.setData(ModAttachments.LEVEL_ORG_FOOD_VALUE, data);
+            }
+        }
+
+//        可直接食用的方块食物
         isFlagOk().ifPresent(it->{
             int foodHash = EatHistory.getFoodHash(item.get().getItem());
 //            添加饮食记录
             it.addEatHistory_Mem(foodHash, (float)realHunger.get(), realSaturation.get(), 1.0f/(float)bites.get(), hungerRoundErr.get());
-//            归档方块食物原始值
-            var curHash = LevelOrgFoodValue.getFoodHash(item.get().getItem(),bite.get());
-            var isChanged = false;
-            var level = player.get().level();
-            var orgDataRecord = level.getData(ModAttachments.LEVEL_ORG_FOOD_VALUE);
-            var hash = orgDataRecord.hash;
-            var hunger = orgDataRecord.hunger;
-            var saturation = orgDataRecord.saturation;
-            var bites = orgDataRecord.bites;
-            var bitesOffset = orgDataRecord.bitesOffset;
-            if(!hash.contains(curHash)) isChanged = true;
-            if(hunger.getOrDefault(curHash,0F) != (float)addHunger.get()) isChanged = true;
-            if(saturation.getOrDefault(curHash,0F) != (float)addSaturation.get()) isChanged = true;
-            if(isChanged){
-                hash.add(curHash);
-                hunger.put(curHash,(float)addHunger.get());
-                saturation.put(curHash,addSaturation.get());
-                bites.put(curHash, BlockBehaviourCached.bites.get());
-                bitesOffset.put(curHash, BlockBehaviourCached.accessOrderAdd == 1 ? 1 : 0);
-                level.setData(ModAttachments.LEVEL_ORG_FOOD_VALUE,orgDataRecord);
-            }
 //            为方块食物第一口添加洋葱版食物多样性
             if(bite.get() == 0){
                 item.get().set(DataComponents.FOOD,new FoodProperties(
@@ -96,6 +156,8 @@ public class BlockBehaviourCached {
         item = Optional.empty();
         bites = Optional.empty();
         bite = Optional.empty();
+        type = Optional.empty();
+        usingConvertsTo = Optional.empty();
         foodProperties = Optional.empty();
         context = Optional.empty();
         addHunger = Optional.empty();

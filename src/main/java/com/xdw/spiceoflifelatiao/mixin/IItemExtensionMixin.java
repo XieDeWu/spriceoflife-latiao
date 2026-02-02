@@ -6,6 +6,7 @@ import com.xdw.spiceoflifelatiao.cached.FoodPropertiesCached;
 import com.xdw.spiceoflifelatiao.cached.LevelCalcCached;
 import com.xdw.spiceoflifelatiao.linkage.IFoodItem;
 import com.xdw.spiceoflifelatiao.util.EatHistory;
+import com.xdw.spiceoflifelatiao.util.IEatHistoryAcessor;
 import net.minecraft.core.component.DataComponents;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.player.Player;
@@ -47,11 +48,6 @@ public interface IItemExtensionMixin {
                 .ifPresent(food::set);
         if (!ConfigCached.EANBLE_CHANGE) return food.get();
         if(EatHistory.recentEntity.isPresent() && !(EatHistory.recentEntity.get() instanceof Player)) return food.get();
-        if(food.get() == null
-                && EatHistory.recentEntity.isPresent()
-                && EatHistory.recentEntity.get() instanceof Player _p
-                && !LevelOrgFoodValue.checkBlockFoodInfo(_p,stack)
-        ) return null;
         AtomicInteger nutrition = new AtomicInteger(0);
         AtomicReference<Float> saturation = new AtomicReference<>(0F);
         AtomicReference<Float> eatSeconds = new AtomicReference<>(1.6F);
@@ -69,6 +65,7 @@ public interface IItemExtensionMixin {
         Optional<ItemStack> usingConvertsTo = Optional.ofNullable(food.get()).flatMap(FoodProperties::usingConvertsTo);
         List<FoodProperties.PossibleEffect> effects = Optional.ofNullable(food.get()).map(FoodProperties::effects).orElse(List.of());
         stack.setCount(count);
+        if(nutrition.get() == 0 && saturation.get() == 0 && usingConvertsTo.isEmpty() && effects.isEmpty()) return food.get();
         return new FoodProperties(nutrition.get(), saturation.get(), canAlwaysEat, eatSeconds.get(), usingConvertsTo, effects);
     }
 }

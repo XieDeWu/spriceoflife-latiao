@@ -10,6 +10,7 @@
   "spiceoflifelatiao.configuration.HUNGER": "默认饱食度公式",
   "spiceoflifelatiao.configuration.SATURATION": "默认饱和度公式",
   "spiceoflifelatiao.configuration.EAT_SECONDS": "默认食用时间公式",
-  "spiceoflifelatiao.tooltip.block_food.uncollected" : "此方块饮食数据未采集",
-  "spiceoflifelatiao.tooltip.block_food.uncollected.food_item" : "此方块饮食数据未采集,默认显示物品数据"
+  "spiceoflifelatiao.tooltip.block_food.uncollected" : "饮食数据未采集",
+  "spiceoflifelatiao.tooltip.block_food.uncollected.part" : "饮食数据部分采集",
+  "spiceoflifelatiao.tooltip.block_food.uncollected.food_item" : "饮食数据未采集,显示物品数据"
 }

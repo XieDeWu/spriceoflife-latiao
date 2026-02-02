@@ -19,14 +19,19 @@ public class StateHolderMixin {
         if(BlockBehaviourCached.flag
 //                && Integer.class.isAssignableFrom(property.getValueClass())
                 && property instanceof IntegerProperty intProp
-                && property.getName().equals("bites")
+                && (property.getName().equals("bites") || property.getName().equals("servings"))
         ){
+            int type = -1;
+            if(property.getName().equals("bites")) type = 0;
+            if(property.getName().equals("servings")) type = 1;
+            if(type == -1) return;
             try {
                 Field maxField = IntegerProperty.class.getDeclaredField("max");
                 maxField.setAccessible(true);
                 int max = (int) maxField.get(intProp);
                 BlockBehaviourCached.bites = BlockBehaviourCached.bites.or(()-> Optional.of(max));
                 BlockBehaviourCached.bite = BlockBehaviourCached.bite.or(()->Optional.of(cir.getReturnValueI()));
+                BlockBehaviourCached.type = Optional.of(type);
                 if(BlockBehaviourCached.accessOrderGetValue == 0) BlockBehaviourCached.accessOrderGetValue = BlockBehaviourCached.numSeq.getAndIncrement();
             } catch (Exception ignored) {
 

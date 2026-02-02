@@ -10,6 +10,7 @@
   "spiceoflifelatiao.configuration.HUNGER": "HUNGER",
   "spiceoflifelatiao.configuration.SATURATION": "SATURATION",
   "spiceoflifelatiao.configuration.EAT_SECONDS": "EAT_SECONDS",
-  "spiceoflifelatiao.tooltip.block_food.uncollected" : "This block's food data has not been collected",
-  "spiceoflifelatiao.tooltip.block_food.uncollected.food_item" : "This block's food data has not been collected,showing item data by default"
+  "spiceoflifelatiao.tooltip.block_food.uncollected" : "food data non collected",
+  "spiceoflifelatiao.tooltip.block_food.uncollected.part" : "food data part collected",
+  "spiceoflifelatiao.tooltip.block_food.uncollected.food_item" : "food data non collected,showing item data"
 }
