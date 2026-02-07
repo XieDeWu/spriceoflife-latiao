@@ -2,16 +2,20 @@ package com.xdw.spiceoflifelatiao.cached;
 
 import com.xdw.spiceoflifelatiao.attachments.LevelOrgFoodValue;
 import com.xdw.spiceoflifelatiao.attachments.ModAttachments;
+import com.xdw.spiceoflifelatiao.network.AddEatHistoryMsg;
+import com.xdw.spiceoflifelatiao.network.EatHistoryMsg;
 import com.xdw.spiceoflifelatiao.util.EatHistory;
 import com.xdw.spiceoflifelatiao.util.IEatHistoryAcessor;
 import net.minecraft.core.component.DataComponents;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.resources.ResourceLocation;
+import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.food.FoodProperties;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.phys.Vec3;
 import net.neoforged.neoforge.event.EventHooks;
+import net.neoforged.neoforge.network.PacketDistributor;
 
 import java.util.List;
 import java.util.Objects;
@@ -43,6 +47,12 @@ public class BlockBehaviourCached {
         item = _item;
     }
     public static void end(){
+//        添加饮食记录 一般饮食行为
+        if (player.isPresent() && player.get() instanceof ServerPlayer serverPlayer && serverPlayer.getFoodData() instanceof IEatHistoryAcessor acc && item.isPresent() && realHunger.isPresent() && realSaturation.isPresent()) {
+            int foodHash = EatHistory.getFoodHash(item.get().getItem());
+            PacketDistributor.sendToPlayer(serverPlayer, new AddEatHistoryMsg(foodHash, (float) realHunger.get(), realSaturation.get(), 1.0f / (float) bites.orElse(1), hungerRoundErr.orElse(0F)));
+            acc.addEatHistory_Mem(foodHash, (float) realHunger.get(), realSaturation.get(), 1.0f / (float) bites.orElse(1), hungerRoundErr.orElse(0F));
+        }
 //            方块食物与分装食物
         if (player.isPresent() && item.isPresent() && bite.isPresent() && bites.isPresent()) {
             var defHash = LevelOrgFoodValue.getFoodHash(item.get().getItem(), null);
@@ -118,16 +128,14 @@ public class BlockBehaviourCached {
             }
         }
 
+
 //        可直接食用的方块食物
         isFlagOk().ifPresent(it->{
-            int foodHash = EatHistory.getFoodHash(item.get().getItem());
-//            添加饮食记录
-            it.addEatHistory_Mem(foodHash, (float)realHunger.get(), realSaturation.get(), 1.0f/(float)bites.get(), hungerRoundErr.get());
 //            为方块食物第一口添加洋葱版食物多样性
-            if(bite.get() == 0){
+            if(bite.isEmpty() || bite.get() == 0){
                 item.get().set(DataComponents.FOOD,new FoodProperties(
-                        addHunger.orElse(0)* BlockBehaviourCached.bites.get(),
-                        addSaturation.orElse(0f)* BlockBehaviourCached.bites.get(),
+                        addHunger.orElse(0)* BlockBehaviourCached.bites.orElse(1),
+                        addSaturation.orElse(0f)* BlockBehaviourCached.bites.orElse(1),
                         foodProperties.map(FoodProperties::canAlwaysEat).orElse(false),
                         foodProperties.map(FoodProperties::eatSeconds).orElse(1.6f),
                         foodProperties.flatMap(FoodProperties::usingConvertsTo),
@@ -141,8 +149,8 @@ public class BlockBehaviourCached {
     public static Optional<IEatHistoryAcessor> isFlagOk(){
         return player.isPresent()
                 && item.isPresent()
-                && bites.isPresent()
-                && bite.isPresent()
+//                && bites.isPresent()
+//                && bite.isPresent()
                 && context.isPresent()
                 && realHunger.isPresent()
                 && realSaturation.isPresent()

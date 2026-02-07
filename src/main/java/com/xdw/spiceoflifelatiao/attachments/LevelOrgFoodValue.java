@@ -3,6 +3,7 @@ package com.xdw.spiceoflifelatiao.attachments;
 import com.mojang.serialization.Codec;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
 import com.xdw.spiceoflifelatiao.util.EatFormulaContext;
+import net.minecraft.core.component.DataComponents;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.network.codec.StreamCodec;
@@ -69,7 +70,7 @@ public final class LevelOrgFoodValue {
 
         var packInfo_def = Optional.ofNullable(data.usingConvertsTo.get(hash0))
                 .map(BuiltInRegistries.ITEM::get)
-                .map(i -> i.getFoodProperties(i.getDefaultInstance(), player))
+                .map(i -> i.getDefaultInstance().get(DataComponents.FOOD))
                 .map(i -> new Vec3(i.nutrition(), i.saturation(), 0));
         var hunger_pack_def = packInfo_def.map(i->(float)i.x);
         var saturation_pack_def = packInfo_def.map(i->(float)i.y);
@@ -85,7 +86,7 @@ public final class LevelOrgFoodValue {
             var hashIt = LevelOrgFoodValue.getFoodHash(stack.getItem(), it);
             Optional<Vec3> packInfo = Optional.ofNullable(data.usingConvertsTo.get(hashIt))
                     .map(BuiltInRegistries.ITEM::get)
-                    .map(i -> i.getFoodProperties(i.getDefaultInstance(), player))
+                    .map(i -> i.getDefaultInstance().get(DataComponents.FOOD))
                     .map(i -> new Vec3(i.nutrition(), i.saturation(), 0));
             var hunger_def = defInfo.map(FoodProperties::nutrition).map(i -> sliceCalc  ? i / (float)finalBites : i);
             var saturation_def = defInfo.map(FoodProperties::saturation).map(i -> sliceCalc  ? i /  (float)finalBites : i);
@@ -114,18 +115,18 @@ public final class LevelOrgFoodValue {
         }).reduce(new Vec3(0, 0, 0), Vec3::add).add(new Vec3(hungerAccRoundErr.get().orElse(0F), 0F, eat_seconds.get().orElse(1.6F)));
     }
 
-    public static int getInfoFinishState(@NotNull Player player, @NotNull ItemStack stack) {
+    public static Optional<Integer> getInfoFinishState(@NotNull Player player, @NotNull ItemStack stack) {
         var data = player.level().getData(ModAttachments.LEVEL_ORG_FOOD_VALUE);
         var defHash = LevelOrgFoodValue.getFoodHash(stack.getItem(),null);
-        if(!data.hash.contains(defHash)) return 0;
+        if(!data.hash.contains(defHash)) return Optional.empty();
         if (data.bitesType.get(defHash) instanceof Integer type
                 && data.bites.get(defHash) instanceof Integer bites
                 && data.bitesOffset.get(defHash) instanceof Integer offset
         ) {
             IntStream stream = type == 1 ? IntStream.range(1, bites + 1) : IntStream.range(0, bites + offset);
-            return stream.mapToObj(i->data.hash.contains(LevelOrgFoodValue.getFoodHash(stack.getItem(),i))).anyMatch(i-> !i) ? 1 : 2;
+            return Optional.of(stream.mapToObj(i -> data.hash.contains(LevelOrgFoodValue.getFoodHash(stack.getItem(), i))).anyMatch(i -> !i) ? 1 : 2);
         }
-        return 0;
+        return stack.get(DataComponents.FOOD) == null ? Optional.empty() : Optional.of(2);
     }
 
     static final class CustomCodec {

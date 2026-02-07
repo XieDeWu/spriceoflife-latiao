@@ -18,7 +18,8 @@ public class SyncHandler {
         final PayloadRegistrar registrar = event.registrar(SpiceOfLifeLatiao.MODID)
                 .versioned(SpiceOfLifeLatiao.VERSION)
                 .optional();
-        registrar.playToClient(MessageQueueSync.TYPE, MessageQueueSync.CODEC, MessageQueueSync::handle);
+        registrar.playToClient(EatHistoryMsg.TYPE, EatHistoryMsg.CODEC, EatHistoryMsg::handle);
+        registrar.playToClient(AddEatHistoryMsg.TYPE, AddEatHistoryMsg.CODEC, AddEatHistoryMsg::handle);
         NeoForge.EVENT_BUS.register(new SyncHandler());
     }
 
@@ -52,7 +53,7 @@ public class SyncHandler {
         if (player.getFoodData() instanceof IEatHistoryAcessor ac){
             ac.getEatHistory_Bin()
                     .ifPresent(x->{
-                        PacketDistributor.sendToPlayer(player, new MessageQueueSync(x));
+                        PacketDistributor.sendToPlayer(player, new EatHistoryMsg(x));
                     });
         }
     }

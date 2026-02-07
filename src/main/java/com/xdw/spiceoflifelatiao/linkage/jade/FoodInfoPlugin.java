@@ -80,11 +80,11 @@ public class FoodInfoPlugin implements IWailaPlugin, IBlockComponentProvider {
     @Override
     @OnlyIn(Dist.CLIENT)
     public void appendTooltip(ITooltip iTooltip, BlockAccessor blockAccessor, IPluginConfig iPluginConfig) {
-        if (player.isEmpty() || stack.isEmpty() || bite.isEmpty()) return;
+        if (player.isEmpty() || stack.isEmpty()) return;
         var isBlockFood = isBlockFood(player.get(),stack.get(),blockAccessor.getBlockState());
         var infoState = LevelOrgFoodValue.getInfoFinishState(player.get(), stack.get());
         var itemFoodInfo = stack.get().get(DataComponents.FOOD);
-        Vec3 blockFoodInfo = LevelOrgFoodValue.getBlockFoodInfo(player.get(), stack.get(), bite.get(), itemFoodInfo, true, serialNumber.incrementAndGet());
+        Vec3 blockFoodInfo = LevelOrgFoodValue.getBlockFoodInfo(player.get(), stack.get(), bite.orElse(0), itemFoodInfo, true, serialNumber.incrementAndGet());
         List<@NotNull IElement> hud_hunger = new ArrayList<>();
         List<@NotNull IElement> hud_saturation = new ArrayList<>();
         List<@NotNull IElement> hud_warn = new ArrayList<>();
@@ -130,11 +130,13 @@ public class FoodInfoPlugin implements IWailaPlugin, IBlockComponentProvider {
         });
         if (Minecraft.getInstance().getResourceManager().getResource(RES_APPLESKIN).isPresent()) hud2.count();
         hud_saturation = needRevSaturation.get() ? tempHudSaturation.reversed() : tempHudSaturation;
-        if (isBlockFood && List.of(0,1).contains(infoState)) {
+        if (isBlockFood) {
             var text = "";
-            text = infoState == 0 && itemFoodInfo == null ? "spiceoflifelatiao.tooltip.block_food.uncollected" : text;
-            text = infoState == 0 && itemFoodInfo != null ? "spiceoflifelatiao.tooltip.block_food.uncollected.food_item" : text;
-            text = infoState == 1 ? "spiceoflifelatiao.tooltip.block_food.uncollected.part" : text;
+            if(infoState.isPresent()){
+                if(infoState.get() == 0 && itemFoodInfo == null) text = "spiceoflifelatiao.tooltip.block_food.uncollected";
+                if(infoState.get() == 0 && itemFoodInfo != null) text = "spiceoflifelatiao.tooltip.block_food.uncollected.food_item";
+                if(infoState.get() == 1 && itemFoodInfo != null) text = "spiceoflifelatiao.tooltip.block_food.uncollected.part";
+            }
             if(!text.isEmpty()) hud_warn.add(ElementHelper.INSTANCE.text(Component.translatable(text).withStyle(ChatFormatting.DARK_RED)));
         }
         iTooltip.add(hud_hunger);
@@ -148,6 +150,7 @@ public class FoodInfoPlugin implements IWailaPlugin, IBlockComponentProvider {
     public boolean isBlockFood(@NotNull Player player,@NotNull ItemStack stack,@NotNull BlockState state){
         if (!player.isAddedToLevel() || player.tickCount <= 0)
             return false;
+        if(stack.get(DataComponents.FOOD) != null) return true;
         LevelOrgFoodValue data = player.level().getData(ModAttachments.LEVEL_ORG_FOOD_VALUE);
         int defHash = LevelOrgFoodValue.getFoodHash(stack.getItem(), null);
         boolean isBlockFood = Optional.ofNullable(data.bites.get(defHash)).isPresent();
