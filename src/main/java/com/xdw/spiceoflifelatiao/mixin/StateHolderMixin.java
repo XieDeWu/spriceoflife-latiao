@@ -1,6 +1,6 @@
 package com.xdw.spiceoflifelatiao.mixin;
 
-import com.xdw.spiceoflifelatiao.cached.BlockBehaviourCached;
+import com.xdw.spiceoflifelatiao.cached.FoodDataCached;
 import net.minecraft.world.level.block.state.StateHolder;
 import net.minecraft.world.level.block.state.properties.IntegerProperty;
 import net.minecraft.world.level.block.state.properties.Property;
@@ -16,7 +16,7 @@ import java.util.Optional;
 public class StateHolderMixin {
     @Inject(at = @At("TAIL"),method = "getValue")
     private static <T extends Comparable<T>> void getValue(Property<T> property, CallbackInfoReturnable<T> cir) {
-        if(BlockBehaviourCached.flag
+        if(FoodDataCached.flag
 //                && Integer.class.isAssignableFrom(property.getValueClass())
                 && property instanceof IntegerProperty intProp
                 && (property.getName().equals("bites") || property.getName().equals("servings"))
@@ -29,10 +29,10 @@ public class StateHolderMixin {
                 Field maxField = IntegerProperty.class.getDeclaredField("max");
                 maxField.setAccessible(true);
                 int max = (int) maxField.get(intProp);
-                BlockBehaviourCached.bites = BlockBehaviourCached.bites.or(()-> Optional.of(max));
-                BlockBehaviourCached.bite = BlockBehaviourCached.bite.or(()->Optional.of(cir.getReturnValueI()));
-                BlockBehaviourCached.type = Optional.of(type);
-                if(BlockBehaviourCached.accessOrderGetValue == 0) BlockBehaviourCached.accessOrderGetValue = BlockBehaviourCached.numSeq.getAndIncrement();
+                FoodDataCached.bites = FoodDataCached.bites.or(()-> Optional.of(max));
+                FoodDataCached.bite = FoodDataCached.bite.or(()->Optional.of(cir.getReturnValueI()));
+                FoodDataCached.type = Optional.of(type);
+                if(FoodDataCached.accessOrderGetValue == 0) FoodDataCached.accessOrderGetValue = FoodDataCached.numSeq.getAndIncrement();
             } catch (Exception ignored) {
 
             }

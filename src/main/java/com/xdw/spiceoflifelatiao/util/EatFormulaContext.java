@@ -1,8 +1,8 @@
 package com.xdw.spiceoflifelatiao.util;
 
-import com.xdw.spiceoflifelatiao.cached.BlockBehaviourCached;
 import com.xdw.spiceoflifelatiao.cached.ConfigCached;
 import com.xdw.spiceoflifelatiao.cached.EatFormulaCalcCached;
+import com.xdw.spiceoflifelatiao.cached.FoodDataCached;
 import com.xdw.spiceoflifelatiao.cached.PlayerCalcCached;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.food.FoodData;
@@ -32,7 +32,7 @@ public record EatFormulaContext(
         int _flag = Stream.of(
                 foodProperties != null ? foodProperties.nutrition() : 0,
                 Math.round(foodProperties != null ? foodProperties.saturation() : 0),
-                BlockBehaviourCached.flag ? 0 : 1,
+                FoodDataCached.flag ? 0 : 1,
                 flag
         ).reduce(1, (h, v) -> 31 * h + v);
         return EatFormulaCalcCached.getCached(player, item, _flag)

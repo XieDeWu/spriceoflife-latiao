@@ -1,6 +1,6 @@
 package com.xdw.spiceoflifelatiao.mixin;
 
-import com.xdw.spiceoflifelatiao.cached.BlockBehaviourCached;
+import com.xdw.spiceoflifelatiao.cached.FoodDataCached;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResult;
 import net.minecraft.world.ItemInteractionResult;
@@ -25,20 +25,20 @@ public abstract class BlockStateBaseMixin {
 
     @Inject(at = @At(value = "HEAD"), method = "useWithoutItem")
     public void useWithoutItemBefore(Level level, Player player, BlockHitResult hitResult, CallbackInfoReturnable<InteractionResult> cir) {
-        BlockBehaviourCached.start(Optional.ofNullable(player),Optional.of(asState().getBlock().asItem().getDefaultInstance()));
+        FoodDataCached.start(Optional.ofNullable(player),Optional.of(asState().getBlock().asItem().getDefaultInstance()));
     }
     @Inject(at = @At(value = "TAIL"), method = "useWithoutItem")
     public void useWithoutItemAfter(Level level, Player player, BlockHitResult hitResult, CallbackInfoReturnable<InteractionResult> cir) {
-        BlockBehaviourCached.end();
+        FoodDataCached.end();
     }
 
     @Inject(at = @At(value = "HEAD"), method = "useItemOn")
     public void useItemOnStart(ItemStack stack, Level level, Player player, InteractionHand hand, BlockHitResult hitResult, CallbackInfoReturnable<ItemInteractionResult> cir) {
-        BlockBehaviourCached.start(Optional.ofNullable(player),Optional.of(asState().getBlock().asItem().getDefaultInstance()));
+        FoodDataCached.start(Optional.ofNullable(player),Optional.of(asState().getBlock().asItem().getDefaultInstance()));
     }
 
     @Inject(at = @At(value = "TAIL"), method = "useItemOn")
     public void useItemOnEnd(ItemStack stack, Level level, Player player, InteractionHand hand, BlockHitResult hitResult, CallbackInfoReturnable<ItemInteractionResult> cir) {
-        BlockBehaviourCached.end();
+        FoodDataCached.end();
     }
 }

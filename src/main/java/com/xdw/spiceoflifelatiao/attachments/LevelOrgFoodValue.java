@@ -36,7 +36,7 @@ public final class LevelOrgFoodValue {
         return (item.toString().replace(" ", "") + ":" + (bite != null ? bite : "")).hashCode();
     }
 
-    public static Vec3 getBlockFoodInfo(@NotNull Player player, @NotNull ItemStack stack, int bite, FoodProperties _defaultFoodInfo, boolean sliceCalc, int flag) {
+    public static Vec3 getBlockFoodInfo(@NotNull Player player, @NotNull ItemStack stack, Integer bite, FoodProperties _defaultFoodInfo, boolean sliceCalc, int flag) {
         Optional<FoodProperties> defInfo = Optional.ofNullable(_defaultFoodInfo);
         if (!player.isAddedToLevel() || player.tickCount <= 0)
             return defInfo.map(it -> new Vec3(it.nutrition(), it.saturation(), it.eatSeconds())).orElse(new Vec3(0, 0, 1.6F));
@@ -46,6 +46,7 @@ public final class LevelOrgFoodValue {
         Optional<Integer> bitesOffset = Optional.ofNullable(data.bitesOffset.get(defHash));
         Optional<Integer> bitesType = Optional.ofNullable(data.bitesType.get(defHash));
         Optional<Integer> itemFoodBites = bites;
+        bite = bite == null ? (bitesType.isPresent() && bitesType.get() == 1 ? bites.orElse(0) : 0) : bite;
         if (sliceCalc && !data.hash.contains(defHash) && stack.getItem() instanceof BlockItem bi) {
             BlockState blockState = bi.getBlock().defaultBlockState();
             itemFoodBites = blockState.getValues().keySet().stream().map(comparable -> {
@@ -84,9 +85,11 @@ public final class LevelOrgFoodValue {
             var tileHunger = 0;
             var tileSaturation = 0F;
             var hashIt = LevelOrgFoodValue.getFoodHash(stack.getItem(), it);
-            Optional<Vec3> packInfo = Optional.ofNullable(data.usingConvertsTo.get(hashIt))
+            Optional<ItemStack> packFood = Optional.ofNullable(data.usingConvertsTo.get(hashIt))
                     .map(BuiltInRegistries.ITEM::get)
-                    .map(i -> i.getDefaultInstance().get(DataComponents.FOOD))
+                    .map(Item::getDefaultInstance);
+            Optional<Vec3> packInfo = packFood
+                    .map(i->i.get(DataComponents.FOOD))
                     .map(i -> new Vec3(i.nutrition(), i.saturation(), 0));
             var hunger_def = defInfo.map(FoodProperties::nutrition).map(i -> sliceCalc  ? i / (float)finalBites : i);
             var saturation_def = defInfo.map(FoodProperties::saturation).map(i -> sliceCalc  ? i /  (float)finalBites : i);
@@ -94,6 +97,7 @@ public final class LevelOrgFoodValue {
             var saturation_direct = Optional.ofNullable(data.saturation.get(hashIt));
             var hunger_pack = packInfo.map(i -> (float)i.x);
             var saturation_pack = packInfo.map(i -> (float) i.y);
+            var onlyPackInfo = defInfo.isEmpty() && hunger_direct.isEmpty() && (packInfo.isPresent() || packInfo_def.isPresent());
             tileHunger = Math.round(hunger_def
                     .or(() -> hunger_direct)
                     .or(() -> hunger_direct_def)
@@ -107,7 +111,7 @@ public final class LevelOrgFoodValue {
                     .or(() -> saturation_pack)
                     .or(() -> saturation_pack_def)
                     .orElse(0F);
-            var calc = EatFormulaContext.from(player, stack, new FoodProperties(tileHunger, tileSaturation, defInfo.map(FoodProperties::canAlwaysEat).orElse(false), defInfo.map(FoodProperties::eatSeconds).orElse(1.6F), defInfo.flatMap(FoodProperties::usingConvertsTo), defInfo.map(FoodProperties::effects).orElse(List.of())), flag);
+            var calc = EatFormulaContext.from(player, onlyPackInfo ? packFood.orElse(stack) : stack, new FoodProperties(tileHunger, tileSaturation, defInfo.map(FoodProperties::canAlwaysEat).orElse(false), defInfo.map(FoodProperties::eatSeconds).orElse(1.6F), defInfo.flatMap(FoodProperties::usingConvertsTo), defInfo.map(FoodProperties::effects).orElse(List.of())), flag);
             if (hungerAccRoundErr.get().isEmpty() && calc.isPresent())
                 hungerAccRoundErr.set(Optional.of(calc.get().hungerAccRoundErr()));
             if (eat_seconds.get().isEmpty() && calc.isPresent()) eat_seconds.set(Optional.of(calc.get().eat_seconds()));

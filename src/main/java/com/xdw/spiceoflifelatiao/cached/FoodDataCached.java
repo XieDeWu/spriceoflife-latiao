@@ -3,7 +3,6 @@ package com.xdw.spiceoflifelatiao.cached;
 import com.xdw.spiceoflifelatiao.attachments.LevelOrgFoodValue;
 import com.xdw.spiceoflifelatiao.attachments.ModAttachments;
 import com.xdw.spiceoflifelatiao.network.AddEatHistoryMsg;
-import com.xdw.spiceoflifelatiao.network.EatHistoryMsg;
 import com.xdw.spiceoflifelatiao.util.EatHistory;
 import com.xdw.spiceoflifelatiao.util.IEatHistoryAcessor;
 import net.minecraft.core.component.DataComponents;
@@ -23,8 +22,9 @@ import java.util.Optional;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 
-public class BlockBehaviourCached {
+public class FoodDataCached {
     public static boolean flag = false;
+    public static boolean readFoodInfo = false;
     public static Optional<Player> player = Optional.empty();
     public static Optional<ItemStack> item = Optional.empty();
     public static Optional<Integer> bites = Optional.empty();
@@ -37,7 +37,6 @@ public class BlockBehaviourCached {
     public static Optional<Integer> realHunger = Optional.empty();
     public static Optional<Float> realSaturation = Optional.empty();
     public static Optional<Float> hungerRoundErr = Optional.empty();
-    private static Optional<Vec3> context = Optional.empty();
     public static int accessOrderGetValue = 0;
     public static int accessOrderAdd = 0;
     public static AtomicInteger numSeq = new AtomicInteger(1);
@@ -91,14 +90,14 @@ public class BlockBehaviourCached {
             });
 
             // === bites ===
-            int newBites = BlockBehaviourCached.bites.get();
+            int newBites = FoodDataCached.bites.get();
             if (!Objects.equals(data.bites.get(defHash), newBites)) {
                 data.bites.put(defHash, newBites);
                 isChanged.set(true);
             }
 
             // === bitesOffset ===
-            int newOffset = BlockBehaviourCached.accessOrderAdd == 1 ? 1 : 0;
+            int newOffset = FoodDataCached.accessOrderAdd == 1 ? 1 : 0;
             if (!Objects.equals(data.bitesOffset.get(defHash), newOffset)) {
                 data.bitesOffset.put(defHash, newOffset);
                 isChanged.set(true);
@@ -114,7 +113,7 @@ public class BlockBehaviourCached {
             });
 
             // === usingConvertsTo ===
-            BlockBehaviourCached.usingConvertsTo.ifPresent(stack -> {
+            FoodDataCached.usingConvertsTo.ifPresent(stack -> {
                 ResourceLocation rl = BuiltInRegistries.ITEM.getKey(stack.getItem());
                 ResourceLocation old = data.usingConvertsTo.get(curHash);
                 if (!Objects.equals(old, rl)) {
@@ -134,8 +133,8 @@ public class BlockBehaviourCached {
 //            为方块食物第一口添加洋葱版食物多样性
             if(bite.isEmpty() || bite.get() == 0){
                 item.get().set(DataComponents.FOOD,new FoodProperties(
-                        addHunger.orElse(0)* BlockBehaviourCached.bites.orElse(1),
-                        addSaturation.orElse(0f)* BlockBehaviourCached.bites.orElse(1),
+                        addHunger.orElse(0)* FoodDataCached.bites.orElse(1),
+                        addSaturation.orElse(0f)* FoodDataCached.bites.orElse(1),
                         foodProperties.map(FoodProperties::canAlwaysEat).orElse(false),
                         foodProperties.map(FoodProperties::eatSeconds).orElse(1.6f),
                         foodProperties.flatMap(FoodProperties::usingConvertsTo),
@@ -151,7 +150,7 @@ public class BlockBehaviourCached {
                 && item.isPresent()
 //                && bites.isPresent()
 //                && bite.isPresent()
-                && context.isPresent()
+//                && context.isPresent()
                 && realHunger.isPresent()
                 && realSaturation.isPresent()
                 && hungerRoundErr.isPresent()
@@ -160,6 +159,7 @@ public class BlockBehaviourCached {
     }
     public static void initFlag(){
         flag = false;
+        readFoodInfo = false;
         player = Optional.empty();
         item = Optional.empty();
         bites = Optional.empty();
@@ -167,7 +167,6 @@ public class BlockBehaviourCached {
         type = Optional.empty();
         usingConvertsTo = Optional.empty();
         foodProperties = Optional.empty();
-        context = Optional.empty();
         addHunger = Optional.empty();
         addSaturation = Optional.empty();
         realHunger = Optional.empty();
@@ -178,13 +177,4 @@ public class BlockBehaviourCached {
         numSeq = new AtomicInteger(1);
     }
 
-    public static Optional<Vec3> getContext(FoodProperties defaultFoodInfo,int flag){
-        if (context.isPresent()) return context;
-        if (player.isPresent() && item.isPresent()){
-            context = Optional.of(LevelOrgFoodValue.getBlockFoodInfo(BlockBehaviourCached.player.get(),BlockBehaviourCached.item.get(),0,defaultFoodInfo,false,flag));
-            return context;
-        }
-
-        return Optional.empty();
-    }
 }

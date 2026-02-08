@@ -2,7 +2,6 @@ package com.xdw.spiceoflifelatiao.mixin;
 
 import com.xdw.spiceoflifelatiao.util.EatHistory;
 import net.minecraft.world.entity.LivingEntity;
-import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import org.spongepowered.asm.mixin.Mixin;
