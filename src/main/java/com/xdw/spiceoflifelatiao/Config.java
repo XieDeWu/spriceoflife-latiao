@@ -108,6 +108,14 @@ public class Config {
                     "*(1/(1+FOOD_BUFF))*(2-1/(1+FOOD_DEBUFF))"
             ),()->"",it->it instanceof String);
 
+    public static final ModConfigSpec.ConfigValue<List<? extends String>> BLACK_FOOD = BUILDER
+            .comment("黑名单食物，默认：【金苹果，附魔金苹果】")
+            .comment("额外修正项：食物T值（0~1线性插值，默认为0，0为原始值，1为调整值）")
+            .defineListAllowEmpty("BLACK_FOOD",List.of("minecraft:apple,1",
+                    "minecraft:golden_apple,0.25",
+                    "minecraft:enchanted_golden_apple"
+            ),()->"minecraft:apple",it->it instanceof String);
+
     static final ModConfigSpec SPEC = BUILDER.build();
 
 }

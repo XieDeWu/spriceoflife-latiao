@@ -5,7 +5,10 @@ import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.config.ModConfig;
 import net.neoforged.fml.event.config.ModConfigEvent;
 
+import java.util.HashMap;
 import java.util.List;
+import java.util.Optional;
+import java.util.stream.Stream;
 
 public final class ConfigCached {
     public static boolean EANBLE_CHANGE = false;
@@ -19,6 +22,8 @@ public final class ConfigCached {
     public static List<? extends String> HUNGER = List.of("HUNGER_ORG");
     public static List<? extends String> SATURATION = List.of("SATURATION_ORG");
     public static List<? extends String> EAT_SECONDS = List.of("EAT_SECONDS_ORG");
+    public static List<? extends String> BLACK_FOOD = List.of("");
+    public static HashMap<Integer,Float> BLACK_FOOD_T = new HashMap<>();
 
     @SubscribeEvent
     public static void onConfigLoaded(ModConfigEvent.Loading event) {
@@ -45,6 +50,28 @@ public final class ConfigCached {
         HUNGER = Config.HUNGER.get();
         SATURATION = Config.SATURATION.get();
         EAT_SECONDS = Config.EAT_SECONDS.get();
-
+        BLACK_FOOD = Config.BLACK_FOOD.get();
+        var ts = new HashMap<Integer,Float>();
+        BLACK_FOOD.forEach(i -> {
+            String[] split = i.split(",");
+            if (split.length == 1) {
+                ts.put(split[0].hashCode(), 0F);
+            } else if (split.length == 2) {
+                ts.put(split[0].hashCode(), Stream.of(split[1])
+                        .map(s -> {
+                            try {
+                                return Float.parseFloat(s);
+                            } catch (Exception e) {
+                                return 0F;
+                            }
+                        })
+                        .findFirst()
+                        .filter(j -> !(j.isNaN() || j.isInfinite()))
+                        .map(j -> Math.max(0F, Math.min(1F, j)))
+                        .orElse(0F)
+                );
+            }
+        });
+        BLACK_FOOD_T = ts;
     }
 }

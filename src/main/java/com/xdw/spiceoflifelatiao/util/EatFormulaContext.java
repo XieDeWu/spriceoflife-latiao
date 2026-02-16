@@ -178,20 +178,29 @@ public record EatFormulaContext(
             float loss = (float) eval(String.join("",ConfigCached.LOSS),context).evaluate();
             if(Float.isNaN(loss) || Float.isInfinite(loss)) return Optional.empty();
             context.put("LOSS",loss);
-            float hunger = (float) eval(String.join("",ConfigCached.HUNGER),context).evaluate();
-            if(Float.isNaN(hunger) || Float.isInfinite(hunger)) return Optional.empty();
-            context.put("HUNGER",hunger);
-            float saturation = (float) eval(String.join("",ConfigCached.SATURATION),context).evaluate();
-            if(Float.isNaN(saturation) || Float.isInfinite(saturation)) return Optional.empty();
-            context.put("SATURATION",saturation);
-            float eat_seconds = (float) eval(String.join("",ConfigCached.EAT_SECONDS),context).evaluate();
-            if(Float.isNaN(eat_seconds) || Float.isInfinite(eat_seconds)) return Optional.empty();
-            context.put("EAT_SECONDS",eat_seconds);
+            AtomicReference<Float> hunger = new AtomicReference<>((float) eval(String.join("", ConfigCached.HUNGER), context).evaluate());
+            if(Float.isNaN(hunger.get()) || Float.isInfinite(hunger.get())) return Optional.empty();
+            context.put("HUNGER",hunger.get());
+            AtomicReference<Float> saturation = new AtomicReference<>((float) eval(String.join("", ConfigCached.SATURATION), context).evaluate());
+            if(Float.isNaN(saturation.get()) || Float.isInfinite(saturation.get())) return Optional.empty();
+            context.put("SATURATION",saturation.get());
+            AtomicReference<Float> eat_seconds = new AtomicReference<>((float) eval(String.join("", ConfigCached.EAT_SECONDS), context).evaluate());
+            if(Float.isNaN(eat_seconds.get()) || Float.isInfinite(eat_seconds.get())) return Optional.empty();
+            context.put("EAT_SECONDS",eat_seconds.get());
+
+//            black_food_t
+            foodHash.flatMap(i->Optional.ofNullable(ConfigCached.BLACK_FOOD_T.get(i)))
+                    .ifPresent(t->{
+                        hunger.set(hunger_org + (hunger.get() - hunger_org) * t);
+                        saturation.set(saturation_org + (saturation.get() - saturation_org) * t);
+                        eat_seconds.set(eat_seconds_org + (eat_seconds.get() - eat_seconds_org) * t);
+                    });
+
             return Optional.of(new EatFormulaContext(
                     loss,
-                    hunger,
-                    saturation,
-                    eat_seconds,
+                    hunger.get(),
+                    saturation.get(),
+                    eat_seconds.get(),
                     eatHistory.map(EatHistory::hungerRoundErr).orElse(0f)
             ));
         } catch (Exception e) {
