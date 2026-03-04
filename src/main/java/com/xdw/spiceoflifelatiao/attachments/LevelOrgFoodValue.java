@@ -81,42 +81,46 @@ public final class LevelOrgFoodValue {
         var scope = bitesType.isPresent() && bitesType.get() == 1
                 ? IntStream.range(1, bite+1)
                 : IntStream.range(bite, Math.max(bite, Math.max(bite, finalBites + bitesOffset.orElse(0))));
-        return scope.mapToObj(it -> {
-            var tileHunger = 0;
-            var tileSaturation = 0F;
-            var hashIt = LevelOrgFoodValue.getFoodHash(stack.getItem(), it);
-            Optional<ItemStack> packFood = Optional.ofNullable(data.usingConvertsTo.get(hashIt))
-                    .map(BuiltInRegistries.ITEM::get)
-                    .map(Item::getDefaultInstance);
-            Optional<Vec3> packInfo = packFood
-                    .map(i->i.get(DataComponents.FOOD))
-                    .map(i -> new Vec3(i.nutrition(), i.saturation(), 0));
-            var hunger_def = defInfo.map(FoodProperties::nutrition).map(i -> sliceCalc  ? i / (float)finalBites : i);
-            var saturation_def = defInfo.map(FoodProperties::saturation).map(i -> sliceCalc  ? i /  (float)finalBites : i);
-            var hunger_direct = Optional.ofNullable(data.hunger.get(hashIt));
-            var saturation_direct = Optional.ofNullable(data.saturation.get(hashIt));
-            var hunger_pack = packInfo.map(i -> (float)i.x);
-            var saturation_pack = packInfo.map(i -> (float) i.y);
-            var onlyPackInfo = defInfo.isEmpty() && hunger_direct.isEmpty() && (packInfo.isPresent() || packInfo_def.isPresent());
-            tileHunger = Math.round(hunger_def
-                    .or(() -> hunger_direct)
-                    .or(() -> hunger_direct_def)
-                    .or(() -> hunger_pack)
-                    .or(() -> hunger_pack_def)
-                    .orElse(0F)
-            );
-            tileSaturation = saturation_def
-                    .or(() -> saturation_direct)
-                    .or(() -> saturation_direct_def)
-                    .or(() -> saturation_pack)
-                    .or(() -> saturation_pack_def)
-                    .orElse(0F);
-            var calc = EatFormulaContext.from(player, onlyPackInfo ? packFood.orElse(stack) : stack, new FoodProperties(tileHunger, tileSaturation, defInfo.map(FoodProperties::canAlwaysEat).orElse(false), defInfo.map(FoodProperties::eatSeconds).orElse(1.6F), defInfo.flatMap(FoodProperties::usingConvertsTo), defInfo.map(FoodProperties::effects).orElse(List.of())), flag);
-            if (hungerAccRoundErr.get().isEmpty() && calc.isPresent())
-                hungerAccRoundErr.set(Optional.of(calc.get().hungerAccRoundErr()));
-            if (eat_seconds.get().isEmpty() && calc.isPresent()) eat_seconds.set(Optional.of(calc.get().eat_seconds()));
-            return calc.map(c -> new Vec3(c.hunger(), c.saturation(), 0)).orElseGet(() -> new Vec3(0, 0, 0));
-        }).reduce(new Vec3(0, 0, 0), Vec3::add).add(new Vec3(hungerAccRoundErr.get().orElse(0F), 0F, eat_seconds.get().orElse(1.6F)));
+        return Optional.of(scope.mapToObj(it -> {
+                            var tileHunger = 0;
+                            var tileSaturation = 0F;
+                            var hashIt = LevelOrgFoodValue.getFoodHash(stack.getItem(), it);
+                            Optional<ItemStack> packFood = Optional.ofNullable(data.usingConvertsTo.get(hashIt))
+                                    .map(BuiltInRegistries.ITEM::get)
+                                    .map(Item::getDefaultInstance);
+                            Optional<Vec3> packInfo = packFood
+                                    .map(i -> i.get(DataComponents.FOOD))
+                                    .map(i -> new Vec3(i.nutrition(), i.saturation(), 0));
+                            var hunger_def = defInfo.map(FoodProperties::nutrition).map(i -> sliceCalc ? i / (float) finalBites : i);
+                            var saturation_def = defInfo.map(FoodProperties::saturation).map(i -> sliceCalc ? i / (float) finalBites : i);
+                            var hunger_direct = Optional.ofNullable(data.hunger.get(hashIt));
+                            var saturation_direct = Optional.ofNullable(data.saturation.get(hashIt));
+                            var hunger_pack = packInfo.map(i -> (float) i.x);
+                            var saturation_pack = packInfo.map(i -> (float) i.y);
+                            var onlyPackInfo = defInfo.isEmpty() && hunger_direct.isEmpty() && (packInfo.isPresent() || packInfo_def.isPresent());
+                            tileHunger = Math.round(hunger_def
+                                    .or(() -> hunger_direct)
+                                    .or(() -> hunger_direct_def)
+                                    .or(() -> hunger_pack)
+                                    .or(() -> hunger_pack_def)
+                                    .orElse(0F)
+                            );
+                            tileSaturation = saturation_def
+                                    .or(() -> saturation_direct)
+                                    .or(() -> saturation_direct_def)
+                                    .or(() -> saturation_pack)
+                                    .or(() -> saturation_pack_def)
+                                    .orElse(0F);
+                            var calc = EatFormulaContext.from(player, onlyPackInfo ? packFood.orElse(stack) : stack, new FoodProperties(tileHunger, tileSaturation, defInfo.map(FoodProperties::canAlwaysEat).orElse(false), defInfo.map(FoodProperties::eatSeconds).orElse(1.6F), defInfo.flatMap(FoodProperties::usingConvertsTo), defInfo.map(FoodProperties::effects).orElse(List.of())), flag);
+                            if (hungerAccRoundErr.get().isEmpty() && calc.isPresent())
+                                hungerAccRoundErr.set(Optional.of(calc.get().hungerAccRoundErr()));
+                            if (eat_seconds.get().isEmpty() && calc.isPresent()) eat_seconds.set(Optional.of(calc.get().eat_seconds()));
+                            return calc.map(c -> new Vec3(c.hunger(), c.saturation(), 0)).orElseGet(() -> new Vec3(0, 0, 0));
+                        })
+                        .reduce(new Vec3(0, 0, 0), Vec3::add)
+                ).filter(i->i.x != 0 || i.y != 0)
+                .map(i->i.add(new Vec3(hungerAccRoundErr.get().orElse(0F), 0F, eat_seconds.get().orElse(1.6F))))
+                .orElse(new Vec3(0, 0, 1.6F));
     }
 
     public static Optional<Integer> getInfoFinishState(@NotNull Player player, @NotNull ItemStack stack) {

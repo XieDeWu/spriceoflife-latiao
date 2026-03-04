@@ -7,6 +7,7 @@ import com.xdw.spiceoflifelatiao.cached.LevelCalcCached;
 import com.xdw.spiceoflifelatiao.util.EatFormulaContext;
 import com.xdw.spiceoflifelatiao.util.EatHistory;
 import com.xdw.spiceoflifelatiao.util.IEatHistoryAcessor;
+import net.minecraft.core.component.DataComponents;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.util.Mth;
 import net.minecraft.world.food.FoodData;
@@ -19,7 +20,6 @@ import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
 import java.util.ArrayList;
-import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
@@ -60,26 +60,23 @@ public abstract class FoodDataMixin implements IEatHistoryAcessor {
         FoodDataCached.addHunger = Optional.of(foodLevel);
         FoodDataCached.addSaturation = Optional.of(saturationLevel);
         if(FoodDataCached.player.isPresent() && FoodDataCached.item.isPresent() && !FoodDataCached.readFoodInfo){
-            Optional.of(LevelOrgFoodValue.getBlockFoodInfo(FoodDataCached.player.get(),FoodDataCached.item.get(),FoodDataCached.bite.orElse(0),new FoodProperties(
-                    foodLevel,
-                    saturationLevel,
-                    FoodDataCached.foodProperties.map(FoodProperties::canAlwaysEat).orElse(true),
-                    FoodDataCached.foodProperties.map(FoodProperties::eatSeconds).orElse(1.6f),
-                    FoodDataCached.foodProperties.flatMap(FoodProperties::usingConvertsTo),
-                    FoodDataCached.foodProperties.map(FoodProperties::effects).orElse(List.of())
-            ),true, (int) LevelCalcCached.gameTime)).ifPresent(it->{
-                hunger.set((int) Math.round(it.x));
-                saturation.set((float) it.y);
+            Optional.of(LevelOrgFoodValue.getBlockFoodInfo(FoodDataCached.player.get(),FoodDataCached.item.get(),null,
+                    FoodDataCached.item.map(i->i.get(DataComponents.FOOD)).orElse(null),
+                    true, (int) LevelCalcCached.gameTime)).ifPresent(it->{
+                var addHunger = it.x / FoodDataCached.bites.orElse(1);
+                var addSaturation = it.y / FoodDataCached.bites.orElse(1);
+                hunger.set((int) Math.round(addHunger));
+                saturation.set((float) addSaturation);
                 FoodDataCached.realHunger = Optional.of(hunger.get());
                 FoodDataCached.realSaturation = Optional.of(saturation.get());
-                FoodDataCached.hungerRoundErr = Optional.of((float) (it.x - hunger.get()));
+                FoodDataCached.hungerRoundErr = Optional.of((float) (addHunger - hunger.get()));
             });
         }else {
             FoodDataCached.realHunger = Optional.of(hunger.get());
             FoodDataCached.realSaturation = Optional.of(saturation.get());
         }
         this.foodLevel = Mth.clamp(hunger.get() + this.foodLevel, 0, 20);
-        this.saturationLevel = Mth.clamp(saturation.get() + this.saturationLevel, 0.0F, (float)this.foodLevel);
+        this.saturationLevel = Mth.clamp(saturation.get() + Optional.of(this.saturationLevel).filter(Float::isFinite).orElse(0F), 0.0F, (float)this.foodLevel);
         if(FoodDataCached.flag && FoodDataCached.accessOrderAdd == 0) FoodDataCached.accessOrderAdd = FoodDataCached.numSeq.getAndIncrement();
     }
 
@@ -110,9 +107,12 @@ public abstract class FoodDataMixin implements IEatHistoryAcessor {
                     eatHistory.eaten().subList(size,eatHistory.eaten().size()).clear();
                     queueFood = eatHistory.foodHash();
                     queueHunger = eatHistory.hunger();
+                    queueHunger.replaceAll(f -> (f != null && Float.isFinite(f)) ? f : 0F);
                     queueSaturation = eatHistory.saturation();
+                    queueSaturation.replaceAll(f -> (f != null && Float.isFinite(f)) ? f : 0F);
                     queueEaten = eatHistory.eaten();
-                    hungerRoundErr = eatHistory.hungerRoundErr();
+                    queueEaten.replaceAll(f -> (f != null && Float.isFinite(f)) ? f : 1F);
+                    hungerRoundErr = Optional.of(eatHistory.hungerRoundErr()).filter(i->!i.isNaN() && !i.isInfinite()).orElse(0F);
                 });
     }
 

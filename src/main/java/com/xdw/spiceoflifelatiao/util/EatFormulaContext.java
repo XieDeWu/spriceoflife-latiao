@@ -79,7 +79,7 @@ public record EatFormulaContext(
 //        Optional<FoodProperties> foodProperties = _item.flatMap(x-> Optional.ofNullable(x.get(DataComponents.FOOD)));
         Optional<FoodProperties> foodProperties = Optional.ofNullable(_foodProperties);
         Float hunger_level = (float) foodData.getFoodLevel();
-        Float saturation_level = foodData.getSaturationLevel();
+        Float saturation_level = Optional.of(foodData.getSaturationLevel()).filter(Float::isFinite).orElse(0F);
         AtomicReference<Float> sum_hunger_long = new AtomicReference<>(0f);
         AtomicReference<Float> sum_saturation_long = new AtomicReference<>(0f);
         AtomicReference<Float> sum_hunger_short = new AtomicReference<>(0f);
