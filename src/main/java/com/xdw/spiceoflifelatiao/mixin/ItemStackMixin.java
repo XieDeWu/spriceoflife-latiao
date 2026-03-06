@@ -19,9 +19,11 @@ public class ItemStackMixin {
     public void finishUsingItemStart(Level level, LivingEntity livingEntity, CallbackInfoReturnable<ItemStack> cir) {
         if(!(livingEntity instanceof Player player)) return;
         FoodDataCached.start(Optional.of(player),Optional.of((ItemStack)(Object)this));
+        FoodDataCached.flag_common = true;
     }
     @Inject(at = @At("TAIL"),method = "finishUsingItem")
     public void finishUsingItemEnd(Level level, LivingEntity livingEntity, CallbackInfoReturnable<ItemStack> cir) {
         FoodDataCached.end();
+        FoodDataCached.flag_common = false;
     }
 }

@@ -24,6 +24,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 public class FoodDataCached {
     public static boolean flag = false;
+    public static boolean flag_common = false;
     public static boolean readFoodInfo = false;
     public static Optional<Player> player = Optional.empty();
     public static Optional<ItemStack> item = Optional.empty();
@@ -131,16 +132,17 @@ public class FoodDataCached {
 //        可直接食用的方块食物
         isFlagOk().ifPresent(it->{
 //            为方块食物第一口添加洋葱版食物多样性
-            if(bite.isEmpty() || bite.get() == 0){
-                item.get().set(DataComponents.FOOD,new FoodProperties(
-                        addHunger.orElse(0)* FoodDataCached.bites.orElse(1),
-                        addSaturation.orElse(0f)* FoodDataCached.bites.orElse(1),
+            if(!FoodDataCached.flag_common && (bite.isEmpty() || bite.get() == 0)){
+                var copy = item.get().copy();
+                copy.set(DataComponents.FOOD, new FoodProperties(
+                        addHunger.orElse(0) * FoodDataCached.bites.orElse(1),
+                        addSaturation.orElse(0f) * FoodDataCached.bites.orElse(1),
                         foodProperties.map(FoodProperties::canAlwaysEat).orElse(false),
                         foodProperties.map(FoodProperties::eatSeconds).orElse(1.6f),
                         foodProperties.flatMap(FoodProperties::usingConvertsTo),
                         foodProperties.map(FoodProperties::effects).orElse(List.of())
                 ));
-                EventHooks.onItemUseFinish(player.get(), item.get(), 0, ItemStack.EMPTY);
+                EventHooks.onItemUseFinish(player.get(), copy, 0, ItemStack.EMPTY);
             }
         });
         initFlag();
