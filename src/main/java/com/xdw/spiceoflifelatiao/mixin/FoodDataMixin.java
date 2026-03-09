@@ -49,6 +49,10 @@ public abstract class FoodDataMixin implements IEatHistoryAcessor {
     @Inject(method = "eat*", at = @At("HEAD"))
     public void eat(FoodProperties foodProperties, CallbackInfo ci) {
         FoodDataCached.foodProperties = Optional.ofNullable(foodProperties);
+        FoodDataCached.addHunger = FoodDataCached.foodProperties.map(FoodProperties::nutrition);
+        FoodDataCached.addSaturation = FoodDataCached.foodProperties.map(FoodProperties::saturation);
+        FoodDataCached.realHunger = FoodDataCached.foodProperties.map(FoodProperties::nutrition);
+        FoodDataCached.realSaturation = FoodDataCached.foodProperties.map(FoodProperties::saturation);
     }
 
 
