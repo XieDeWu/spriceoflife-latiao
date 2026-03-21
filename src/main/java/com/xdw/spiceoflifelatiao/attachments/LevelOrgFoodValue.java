@@ -2,6 +2,7 @@ package com.xdw.spiceoflifelatiao.attachments;
 
 import com.mojang.serialization.Codec;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
+import com.xdw.spiceoflifelatiao.SpiceOfLifeLatiao;
 import com.xdw.spiceoflifelatiao.util.EatFormulaContext;
 import net.minecraft.core.component.DataComponents;
 import net.minecraft.core.registries.BuiltInRegistries;
@@ -33,7 +34,7 @@ public final class LevelOrgFoodValue {
     public final Map<Integer, ResourceLocation> usingConvertsTo = new HashMap<>();
 
     public static int getFoodHash(Item item, Integer bite) {
-        return (item.toString().replace(" ", "") + ":" + (bite != null ? bite : "")).hashCode();
+        return (SpiceOfLifeLatiao.VERSION + ":" + item.toString().replace(" ", "") + ":" + (bite != null ? bite : "")).hashCode();
     }
 
     public static Vec3 getBlockFoodInfo(@NotNull Player player, @NotNull ItemStack stack, Integer bite, FoodProperties _defaultFoodInfo, boolean sliceCalc, int flag) {
