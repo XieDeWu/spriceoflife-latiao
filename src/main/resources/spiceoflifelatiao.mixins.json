@@ -16,6 +16,7 @@
     "linkage.solcarrot.FoodListMixin",
     "linkage.solcarrot.FoodTrackerMixin",
     "linkage.solcarrot.MaxHealthHandler",
+    "linkage.solmaiddream.MixinFilterHelper",
     "linkage.solonion.FoodContainerItemMixin"
   ],
   "injectors": {
