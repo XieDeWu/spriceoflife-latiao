@@ -59,6 +59,19 @@ public class Config {
             .comment("启用食用时间调整")
             .define("enable_eat_seconds",true);
 
+    public static final ModConfigSpec.ConfigValue<Boolean> ENABLE_AUTO_BLOCK_FOOD_COLLECT = BUILDER
+            .comment("启用自动学习/记录方块食物。关闭后不会再把交互过的方块写入隐藏世界附件，也不会信任旧的未标识条目，建议用 /sol_latiao food add 手动添加。")
+            .define("enable_auto_block_food_collect", true);
+
+    public static final ModConfigSpec.ConfigValue<Boolean> ENABLE_MANUAL_FOOD_FILE = BUILDER
+            .comment("启用 config/spiceoflifelatiao/edible_items.json 手动可食用物品数据库。")
+            .define("enable_manual_food_file", true);
+
+    public static final ModConfigSpec.ConfigValue<Boolean> ENABLE_FOOD_ID_SAFETY_CHECK = BUILDER
+            .comment("启用可食用物品 ID 安全校验。开启时，隐藏世界附件中的 hash 必须同时匹配物品注册名，防止 hash 碰撞或旧缓存让原石等非食物误判为可吃。")
+            .comment("如果希望保留作者原本的宽松逻辑，允许仅凭旧 hash/缓存让更多物品可吃，可以关闭此项。")
+            .define("enable_food_id_safety_check", true);
+
     public static final ModConfigSpec.ConfigValue<Integer> HISTORY_LENGTH_LONG = BUILDER
             .comment("用于统计长期饮食数据")
             .defineInRange("historyLengthLong", 512, 0, 65535);

@@ -3,6 +3,8 @@ package com.xdw.spiceoflifelatiao.linkage.jade;
 import com.xdw.spiceoflifelatiao.SpiceOfLifeLatiao;
 import com.xdw.spiceoflifelatiao.attachments.LevelOrgFoodValue;
 import com.xdw.spiceoflifelatiao.attachments.ModAttachments;
+import com.xdw.spiceoflifelatiao.cached.ConfigCached;
+import com.xdw.spiceoflifelatiao.config.ManualFoodConfig;
 import net.minecraft.ChatFormatting;
 import net.minecraft.client.Minecraft;
 import net.minecraft.core.component.DataComponents;
@@ -149,10 +151,11 @@ public class FoodInfoPlugin implements IWailaPlugin, IBlockComponentProvider {
         if (!player.isAddedToLevel() || player.tickCount <= 0)
             return false;
         if(stack.get(DataComponents.FOOD) != null) return true;
+        if(ConfigCached.ENABLE_MANUAL_FOOD_FILE && ManualFoodConfig.getEntry(player.level(), stack.getItem()).isPresent()) return true;
         LevelOrgFoodValue data = player.level().getData(ModAttachments.LEVEL_ORG_FOOD_VALUE);
         int defHash = LevelOrgFoodValue.getFoodHash(stack.getItem(), null);
-        boolean isBlockFood = Optional.ofNullable(data.bites.get(defHash)).isPresent();
-        if (!isBlockFood && !data.hash.contains(defHash) && stack.getItem() instanceof BlockItem bi) {
+        boolean isBlockFood = LevelOrgFoodValue.isTrusted(data, stack.getItem(), null) && Optional.ofNullable(data.bites.get(defHash)).isPresent();
+        if (ConfigCached.ENABLE_AUTO_BLOCK_FOOD_COLLECT && !isBlockFood && !LevelOrgFoodValue.isTrusted(data, stack.getItem(), null) && stack.getItem() instanceof BlockItem bi) {
             isBlockFood = state.getValues().keySet().stream().anyMatch(comparable -> comparable instanceof IntegerProperty ip && (ip.getName().equals("bites") || ip.getName().equals("servings")));
         }
         return isBlockFood;

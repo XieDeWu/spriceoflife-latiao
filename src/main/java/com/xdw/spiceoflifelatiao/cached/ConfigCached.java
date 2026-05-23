@@ -16,6 +16,9 @@ public final class ConfigCached {
     public static boolean EANBLE_HUNGER = false;
     public static boolean EANBLE_SATURATION = false;
     public static boolean EANBLE_EAT_SECONDS = false;
+    public static boolean ENABLE_AUTO_BLOCK_FOOD_COLLECT = true;
+    public static boolean ENABLE_MANUAL_FOOD_FILE = true;
+    public static boolean ENABLE_FOOD_ID_SAFETY_CHECK = true;
     public static int HISTORY_LENGTH_LONG = 512;
     public static int HISTORY_LENGTH_SHORT = 16;
     public static List<? extends String> LOSS = List.of("0");
@@ -44,6 +47,9 @@ public final class ConfigCached {
         EANBLE_HUNGER = Config.EANBLE_HUNGER.get();
         EANBLE_SATURATION = Config.EANBLE_SATURATION.get();
         EANBLE_EAT_SECONDS = Config.EANBLE_EAT_SECONDS.get();
+        ENABLE_AUTO_BLOCK_FOOD_COLLECT = Config.ENABLE_AUTO_BLOCK_FOOD_COLLECT.get();
+        ENABLE_MANUAL_FOOD_FILE = Config.ENABLE_MANUAL_FOOD_FILE.get();
+        ENABLE_FOOD_ID_SAFETY_CHECK = Config.ENABLE_FOOD_ID_SAFETY_CHECK.get();
         HISTORY_LENGTH_LONG = Config.HISTORY_LENGTH_LONG.get();
         HISTORY_LENGTH_SHORT = Config.HISTORY_LENGTH_SHORT.get();
         LOSS = Config.LOSS.get();

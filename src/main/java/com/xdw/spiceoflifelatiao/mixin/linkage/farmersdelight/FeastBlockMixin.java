@@ -1,7 +1,6 @@
 package com.xdw.spiceoflifelatiao.mixin.linkage.farmersdelight;
 
 import com.xdw.spiceoflifelatiao.cached.FoodDataCached;
-import com.xdw.spiceoflifelatiao.linkage.farmersdelight.FeastBlockCached;
 import net.minecraft.core.BlockPos;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.ItemInteractionResult;
@@ -18,14 +17,14 @@ public class FeastBlockMixin {
 
     @Inject(at = @At(value = "HEAD"), method = "takeServing")
     public void takeServingStart(LevelAccessor level, BlockPos pos, BlockState state, Player player, InteractionHand hand, CallbackInfoReturnable<ItemInteractionResult> cir) {
-        FeastBlockCached.start();
+        FoodDataCached.startFeastBlockServingCapture();
     }
 
     @Inject(at = @At("RETURN"), method = "takeServing")
     public void takeServingEnd(LevelAccessor level, BlockPos pos, BlockState state, Player player, InteractionHand hand, CallbackInfoReturnable<ItemInteractionResult> cir) {
-        if (cir.getReturnValue() == ItemInteractionResult.SUCCESS && FeastBlockCached.takeServing.isPresent()) {
-            FoodDataCached.usingConvertsTo = FeastBlockCached.takeServing;
+        if (cir.getReturnValue() == ItemInteractionResult.SUCCESS && FoodDataCached.feastBlockTakeServing.isPresent()) {
+            FoodDataCached.usingConvertsTo = FoodDataCached.feastBlockTakeServing;
         }
-        FeastBlockCached.end();
+        FoodDataCached.endFeastBlockServingCapture();
     }
 }

@@ -1,11 +1,11 @@
 package com.xdw.spiceoflifelatiao.mixin;
 
 import com.xdw.spiceoflifelatiao.attachments.LevelOrgFoodValue;
-import com.xdw.spiceoflifelatiao.attachments.ModAttachments;
 import com.xdw.spiceoflifelatiao.cached.ConfigCached;
 import com.xdw.spiceoflifelatiao.cached.FoodDataCached;
 import com.xdw.spiceoflifelatiao.cached.FoodPropertiesCached;
 import com.xdw.spiceoflifelatiao.cached.LevelCalcCached;
+import com.xdw.spiceoflifelatiao.config.ManualFoodConfig;
 import com.xdw.spiceoflifelatiao.linkage.IFoodItem;
 import com.xdw.spiceoflifelatiao.util.EatHistory;
 import net.minecraft.core.component.DataComponents;
@@ -19,7 +19,6 @@ import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Overwrite;
 
 import java.util.List;
-import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
@@ -38,19 +37,30 @@ public interface IItemExtensionMixin {
         AtomicReference<FoodProperties> food = new AtomicReference<>();
         FoodPropertiesCached.getCached(entity, stack)
                 .or(() -> {
-                    AtomicReference<Optional<FoodProperties>> f = new AtomicReference<>(Optional.ofNullable(stack.getItem().getDefaultInstance().get(DataComponents.FOOD)));
+                    AtomicReference<Optional<FoodProperties>> f = new AtomicReference<>(Optional.ofNullable(stack.get(DataComponents.FOOD)));
                     if (EatHistory.recentEntity.isEmpty()) return f.get();
                     if (!(EatHistory.recentEntity.get() instanceof Player player)) return f.get();
 //                   其他来源，如饭盒
                     if (stack.getItem() instanceof IFoodItem box) {
                         f.set(box.getFoodProperties(stack, player));
                     }
+                    if (ConfigCached.ENABLE_MANUAL_FOOD_FILE) {
+                        // Manual entries are an override layer. If there is no manual entry for this item,
+                        // keep the item's original FOOD component (vanilla / other mods). Replacing it with
+                        // Optional.empty() makes every non-manual food non-edible.
+                        ManualFoodConfig.getFoodProperties(player.level(), stack, f.get().orElse(null))
+                                .ifPresent(value -> f.set(Optional.of(value)));
+                    }
                     f.get().ifPresent(it -> FoodPropertiesCached.addCached(player, stack, it));
                     return f.get();
                 })
                 .ifPresent(food::set);
+        if (ConfigCached.ENABLE_MANUAL_FOOD_FILE && entity instanceof Player player) {
+            ManualFoodConfig.getFoodProperties(player.level(), stack, food.get()).ifPresent(food::set);
+        }
         if (!ConfigCached.EANBLE_CHANGE) return food.get();
         if(EatHistory.recentEntity.isPresent() && !(EatHistory.recentEntity.get() instanceof Player)) return food.get();
+        if (food.get() == null && !ConfigCached.ENABLE_AUTO_BLOCK_FOOD_COLLECT) return null;
         AtomicInteger nutrition = new AtomicInteger(0);
         AtomicReference<Float> saturation = new AtomicReference<>(0F);
         AtomicReference<Float> eatSeconds = new AtomicReference<>(1.6F);

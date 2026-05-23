@@ -3,6 +3,8 @@ package com.xdw.spiceoflifelatiao.attachments;
 import com.mojang.serialization.Codec;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
 import com.xdw.spiceoflifelatiao.SpiceOfLifeLatiao;
+import com.xdw.spiceoflifelatiao.cached.ConfigCached;
+import com.xdw.spiceoflifelatiao.config.ManualFoodConfig;
 import com.xdw.spiceoflifelatiao.util.EatFormulaContext;
 import net.minecraft.core.component.DataComponents;
 import net.minecraft.core.registries.BuiltInRegistries;
@@ -32,23 +34,48 @@ public final class LevelOrgFoodValue {
     public final Map<Integer, Integer> bitesOffset = new HashMap<>();
     public final Map<Integer, Integer> bitesType = new HashMap<>();
     public final Map<Integer, ResourceLocation> usingConvertsTo = new HashMap<>();
+    /** Hash -> registry id. This prevents unrelated items from becoming edible because of 32-bit hash collisions. */
+    public final Map<Integer, ResourceLocation> itemIds = new HashMap<>();
 
     public static int getFoodHash(Item item, Integer bite) {
+        ResourceLocation itemId = BuiltInRegistries.ITEM.getKey(item);
+        String id = itemId == null ? item.toString().replace(" ", "") : itemId.toString();
+        return (SpiceOfLifeLatiao.VERSION + ":" + id + ":" + (bite != null ? bite : "")).hashCode();
+    }
+
+    public static int getLegacyFoodHash(Item item, Integer bite) {
         return (SpiceOfLifeLatiao.VERSION + ":" + item.toString().replace(" ", "") + ":" + (bite != null ? bite : "")).hashCode();
     }
 
+    public static boolean isTrusted(LevelOrgFoodValue data, Item item, Integer bite) {
+        int hash = getFoodHash(item, bite);
+        if (!data.hash.contains(hash)) return false;
+        if (!ConfigCached.ENABLE_FOOD_ID_SAFETY_CHECK) return true;
+        ResourceLocation itemId = BuiltInRegistries.ITEM.getKey(item);
+        return itemId != null && itemId.equals(data.itemIds.get(hash));
+    }
+
+    public static void markTrusted(LevelOrgFoodValue data, Item item, Integer bite) {
+        ResourceLocation itemId = BuiltInRegistries.ITEM.getKey(item);
+        if (itemId != null) data.itemIds.put(getFoodHash(item, bite), itemId);
+    }
+
     public static Vec3 getBlockFoodInfo(@NotNull Player player, @NotNull ItemStack stack, Integer bite, FoodProperties _defaultFoodInfo, boolean sliceCalc, int flag) {
-        Optional<FoodProperties> defInfo = Optional.ofNullable(_defaultFoodInfo);
+        Optional<ManualFoodConfig.Entry> manualEntry = ConfigCached.ENABLE_MANUAL_FOOD_FILE ? ManualFoodConfig.getEntry(player.level(), stack.getItem()) : Optional.empty();
+        Optional<FoodProperties> defInfo = Optional.ofNullable(_defaultFoodInfo)
+                .or(() -> manualEntry.flatMap(entry -> entry.toFoodProperties(null)));
         if (!player.isAddedToLevel() || player.tickCount <= 0)
             return defInfo.map(it -> new Vec3(it.nutrition(), it.saturation(), it.eatSeconds())).orElse(new Vec3(0, 0, 1.6F));
-        LevelOrgFoodValue data = sliceCalc ? player.level().getData(ModAttachments.LEVEL_ORG_FOOD_VALUE) : new LevelOrgFoodValue();
+        LevelOrgFoodValue storedData = sliceCalc ? player.level().getData(ModAttachments.LEVEL_ORG_FOOD_VALUE) : new LevelOrgFoodValue();
         int defHash = LevelOrgFoodValue.getFoodHash(stack.getItem(), null);
-        Optional<Integer> bites = Optional.ofNullable(data.bites.get(defHash));
-        Optional<Integer> bitesOffset = Optional.ofNullable(data.bitesOffset.get(defHash));
-        Optional<Integer> bitesType = Optional.ofNullable(data.bitesType.get(defHash));
+        boolean trustedStoredFood = sliceCalc && isTrusted(storedData, stack.getItem(), null);
+        final LevelOrgFoodValue data = (sliceCalc && !trustedStoredFood && manualEntry.isEmpty()) ? new LevelOrgFoodValue() : storedData;
+        Optional<Integer> bites = manualEntry.map(entry -> entry.bites).filter(Objects::nonNull).or(() -> Optional.ofNullable(data.bites.get(defHash)));
+        Optional<Integer> bitesOffset = manualEntry.map(entry -> entry.bitesOffset).filter(Objects::nonNull).or(() -> Optional.ofNullable(data.bitesOffset.get(defHash)));
+        Optional<Integer> bitesType = manualEntry.map(entry -> entry.bitesType).filter(Objects::nonNull).or(() -> Optional.ofNullable(data.bitesType.get(defHash)));
         Optional<Integer> itemFoodBites = bites;
         bite = bite == null ? (bitesType.isPresent() && bitesType.get() == 1 ? bites.orElse(0) : 0) : bite;
-        if (sliceCalc && !data.hash.contains(defHash) && stack.getItem() instanceof BlockItem bi) {
+        if (sliceCalc && ConfigCached.ENABLE_AUTO_BLOCK_FOOD_COLLECT && manualEntry.isEmpty() && !trustedStoredFood && stack.getItem() instanceof BlockItem bi) {
             BlockState blockState = bi.getBlock().defaultBlockState();
             itemFoodBites = blockState.getValues().keySet().stream().map(comparable -> {
                 if (comparable instanceof IntegerProperty ip && ip.getName().equals("bites")) {
@@ -66,11 +93,13 @@ public final class LevelOrgFoodValue {
 
         int finalBites = itemFoodBites.orElse(1);
 
-        var hash0 = LevelOrgFoodValue.getFoodHash(stack.getItem(),bitesType.isPresent() && bitesType.get() == 1 ? finalBites : 0);
-        var hunger_direct_def = Optional.ofNullable(data.hunger.get(hash0));
-        var saturation_direct_def = Optional.ofNullable(data.saturation.get(hash0));
+        var hash0Bite = bitesType.isPresent() && bitesType.get() == 1 ? finalBites : 0;
+        var hash0 = LevelOrgFoodValue.getFoodHash(stack.getItem(), hash0Bite);
+        var trustedHash0 = manualEntry.isPresent() || isTrusted(data, stack.getItem(), hash0Bite);
+        var hunger_direct_def = trustedHash0 ? Optional.ofNullable(data.hunger.get(hash0)) : Optional.<Float>empty();
+        var saturation_direct_def = trustedHash0 ? Optional.ofNullable(data.saturation.get(hash0)) : Optional.<Float>empty();
 
-        var packInfo_def = Optional.ofNullable(data.usingConvertsTo.get(hash0))
+        var packInfo_def = (trustedHash0 ? Optional.ofNullable(data.usingConvertsTo.get(hash0)) : Optional.<ResourceLocation>empty())
                 .map(BuiltInRegistries.ITEM::get)
                 .map(i -> i.getDefaultInstance().get(DataComponents.FOOD))
                 .map(i -> new Vec3(i.nutrition(), i.saturation(), 0));
@@ -86,7 +115,8 @@ public final class LevelOrgFoodValue {
                             var tileHunger = 0;
                             var tileSaturation = 0F;
                             var hashIt = LevelOrgFoodValue.getFoodHash(stack.getItem(), it);
-                            Optional<ItemStack> packFood = Optional.ofNullable(data.usingConvertsTo.get(hashIt))
+                            boolean trustedHashIt = manualEntry.isPresent() || isTrusted(data, stack.getItem(), it);
+                            Optional<ItemStack> packFood = (trustedHashIt ? Optional.ofNullable(data.usingConvertsTo.get(hashIt)) : Optional.<ResourceLocation>empty())
                                     .map(BuiltInRegistries.ITEM::get)
                                     .map(Item::getDefaultInstance);
                             Optional<Vec3> packInfo = packFood
@@ -94,8 +124,8 @@ public final class LevelOrgFoodValue {
                                     .map(i -> new Vec3(i.nutrition(), i.saturation(), 0));
                             var hunger_def = defInfo.map(FoodProperties::nutrition).map(i -> sliceCalc ? i / (float) finalBites : i);
                             var saturation_def = defInfo.map(FoodProperties::saturation).map(i -> sliceCalc ? i / (float) finalBites : i);
-                            var hunger_direct = Optional.ofNullable(data.hunger.get(hashIt));
-                            var saturation_direct = Optional.ofNullable(data.saturation.get(hashIt));
+                            var hunger_direct = trustedHashIt ? Optional.ofNullable(data.hunger.get(hashIt)) : Optional.<Float>empty();
+                            var saturation_direct = trustedHashIt ? Optional.ofNullable(data.saturation.get(hashIt)) : Optional.<Float>empty();
                             var hunger_pack = packInfo.map(i -> (float) i.x);
                             var saturation_pack = packInfo.map(i -> (float) i.y);
                             var onlyPackInfo = defInfo.isEmpty() && hunger_direct.isEmpty() && (packInfo.isPresent() || packInfo_def.isPresent());
@@ -125,9 +155,10 @@ public final class LevelOrgFoodValue {
     }
 
     public static Optional<Integer> getInfoFinishState(@NotNull Player player, @NotNull ItemStack stack) {
+        if (ConfigCached.ENABLE_MANUAL_FOOD_FILE && ManualFoodConfig.getEntry(player.level(), stack.getItem()).isPresent()) return Optional.of(2);
         var data = player.level().getData(ModAttachments.LEVEL_ORG_FOOD_VALUE);
         var defHash = LevelOrgFoodValue.getFoodHash(stack.getItem(),null);
-        if(!data.hash.contains(defHash)) return Optional.empty();
+        if(!isTrusted(data, stack.getItem(), null)) return Optional.empty();
         if (data.bitesType.get(defHash) instanceof Integer type
                 && data.bites.get(defHash) instanceof Integer bites
                 && data.bitesOffset.get(defHash) instanceof Integer offset
@@ -165,8 +196,9 @@ public final class LevelOrgFoodValue {
             CustomCodec.INT_INT_MAP.fieldOf("bites").forGetter(v -> v.bites),
             CustomCodec.INT_INT_MAP.fieldOf("bitesOffset").forGetter(v -> v.bitesOffset),
             CustomCodec.INT_INT_MAP.fieldOf("bitesType").forGetter(v -> v.bitesType),
-            CustomCodec.INT_RL_MAP.fieldOf("usingConvertsTo").forGetter(v -> v.usingConvertsTo)
-    ).apply(i, (a, b, c, d, f, g,h) -> {
+            CustomCodec.INT_RL_MAP.fieldOf("usingConvertsTo").forGetter(v -> v.usingConvertsTo),
+            CustomCodec.INT_RL_MAP.optionalFieldOf("itemIds", Map.<Integer, ResourceLocation>of()).forGetter(v -> v.itemIds)
+    ).apply(i, (a, b, c, d, f, g,h, ids) -> {
         LevelOrgFoodValue v = new LevelOrgFoodValue();
         v.hash.addAll(a);
         v.hunger.putAll(b);
@@ -175,6 +207,7 @@ public final class LevelOrgFoodValue {
         v.bitesOffset.putAll(f);
         v.bitesType.putAll(g);
         v.usingConvertsTo.putAll(h);
+        v.itemIds.putAll(ids);
         return v;
     }));
 
@@ -218,6 +251,12 @@ public final class LevelOrgFoodValue {
             b.writeVarInt(k);
             ResourceLocation.STREAM_CODEC.encode(b, f);
         });
+
+        b.writeVarInt(v.itemIds.size());
+        v.itemIds.forEach((k, f) -> {
+            b.writeVarInt(k);
+            ResourceLocation.STREAM_CODEC.encode(b, f);
+        });
     }, b -> {
         LevelOrgFoodValue v = new LevelOrgFoodValue();
 
@@ -241,6 +280,9 @@ public final class LevelOrgFoodValue {
 
         for (int i = b.readVarInt(); i-- > 0; )
             v.usingConvertsTo.put(b.readVarInt(), ResourceLocation.STREAM_CODEC.decode(b));
+
+        for (int i = b.readVarInt(); i-- > 0; )
+            v.itemIds.put(b.readVarInt(), ResourceLocation.STREAM_CODEC.decode(b));
 
         return v;
     });

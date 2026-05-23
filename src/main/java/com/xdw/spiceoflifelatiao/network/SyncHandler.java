@@ -26,7 +26,7 @@ public class SyncHandler {
     @SubscribeEvent
     public void onPlayerLoggedIn(PlayerEvent.PlayerLoggedInEvent event)
     {
-        syncEatHistory(event.getEntity(),Optional.empty());
+        syncEatHistory(event.getEntity(), Optional.empty());
     }
 
     @SubscribeEvent
@@ -36,12 +36,12 @@ public class SyncHandler {
 
     @SubscribeEvent
     public void onPlayerChangedDimensionEvent(PlayerEvent.PlayerChangedDimensionEvent event){
-        syncEatHistory(event.getEntity(),Optional.empty());
+        syncEatHistory(event.getEntity(), Optional.empty());
     }
 
     @SubscribeEvent
     public void onPlayerRespawnEvent(PlayerEvent.PlayerRespawnEvent event){
-        syncEatHistory(event.getEntity(),Optional.empty());
+        syncEatHistory(event.getEntity(), Optional.empty());
     }
 
     public static void syncEatHistory(Player _oldPlayer, Optional<Player> _newPlayer) {
@@ -57,4 +57,6 @@ public class SyncHandler {
                     });
         }
     }
+
+
 }

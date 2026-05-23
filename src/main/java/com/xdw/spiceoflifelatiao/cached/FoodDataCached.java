@@ -32,6 +32,16 @@ public class FoodDataCached {
     public static Optional<Integer> bite = Optional.empty();
     public static Optional<Integer> type = Optional.empty();
     public static Optional<ItemStack> usingConvertsTo = Optional.empty();
+    /**
+     * Farmer's Delight FeastBlock takeServing 会把盛出的食物塞进玩家背包。
+     * 这里临时捕获 Inventory.add 接收到的 ItemStack，用于记录 serving 后转换物品。
+     *
+     * 之前这段状态放在 linkage.farmersdelight.FeastBlockCached 中。
+     * 一些服务器/构建方式可能没有把该辅助类打进最终 jar，导致运行时 NoClassDefFoundError。
+     * 放到 FoodDataCached 里可以避免额外辅助类缺失导致服务器在玩家拾取物品时崩溃。
+     */
+    public static boolean feastBlockServingCapture = false;
+    public static Optional<ItemStack> feastBlockTakeServing = Optional.empty();
     public static Optional<FoodProperties> foodProperties = Optional.empty();
     public static Optional<Integer> addHunger = Optional.empty();
     public static Optional<Float> addSaturation = Optional.empty();
@@ -46,6 +56,21 @@ public class FoodDataCached {
         player = _player;
         item = _item;
     }
+    public static void startFeastBlockServingCapture() {
+        feastBlockServingCapture = true;
+        feastBlockTakeServing = Optional.empty();
+    }
+
+    public static void endFeastBlockServingCapture() {
+        feastBlockServingCapture = false;
+        feastBlockTakeServing = Optional.empty();
+    }
+
+    public static void captureFeastBlockServing(ItemStack stack) {
+        if (!feastBlockServingCapture || stack == null || stack.isEmpty()) return;
+        feastBlockTakeServing = Optional.of(stack.copy());
+    }
+
     public static void end(){
 //        添加饮食记录 一般饮食行为
         if (player.isPresent() && player.get() instanceof ServerPlayer serverPlayer && serverPlayer.getFoodData() instanceof IEatHistoryAcessor acc && item.isPresent() && realHunger.isPresent() && realSaturation.isPresent()) {
@@ -53,8 +78,8 @@ public class FoodDataCached {
             PacketDistributor.sendToPlayer(serverPlayer, new AddEatHistoryMsg(foodHash, (float) realHunger.get(), realSaturation.get(), 1.0f / (float) bites.orElse(1), hungerRoundErr.orElse(0F)));
             acc.addEatHistory_Mem(foodHash, (float) realHunger.get(), realSaturation.get(), 1.0f / (float) bites.orElse(1), hungerRoundErr.orElse(0F));
         }
-//            方块食物与分装食物
-        if (player.isPresent() && item.isPresent() && bite.isPresent() && bites.isPresent()) {
+//            方块食物与分装食物（自动学习/记录可关闭，避免把误判数据继续写进世界附件）
+        if (ConfigCached.ENABLE_AUTO_BLOCK_FOOD_COLLECT && player.isPresent() && item.isPresent() && bite.isPresent() && bites.isPresent()) {
             var defHash = LevelOrgFoodValue.getFoodHash(item.get().getItem(), null);
             var curHash = LevelOrgFoodValue.getFoodHash(item.get().getItem(), bite.get());
             var level = player.get().level();
@@ -69,6 +94,14 @@ public class FoodDataCached {
             }
             if (!data.hash.contains(curHash)) {
                 data.hash.add(curHash);
+                isChanged.set(true);
+            }
+            if (!Objects.equals(data.itemIds.get(defHash), BuiltInRegistries.ITEM.getKey(item.get().getItem()))) {
+                LevelOrgFoodValue.markTrusted(data, item.get().getItem(), null);
+                isChanged.set(true);
+            }
+            if (!Objects.equals(data.itemIds.get(curHash), BuiltInRegistries.ITEM.getKey(item.get().getItem()))) {
+                LevelOrgFoodValue.markTrusted(data, item.get().getItem(), bite.get());
                 isChanged.set(true);
             }
 
@@ -168,6 +201,8 @@ public class FoodDataCached {
         bite = Optional.empty();
         type = Optional.empty();
         usingConvertsTo = Optional.empty();
+        feastBlockServingCapture = false;
+        feastBlockTakeServing = Optional.empty();
         foodProperties = Optional.empty();
         addHunger = Optional.empty();
         addSaturation = Optional.empty();
