@@ -177,6 +177,7 @@ public class FoodDataCached {
         accessOrderGetValue = 0;
         accessOrderAdd = 0;
         numSeq = new AtomicInteger(1);
+        EatFormulaCalcCached.refreshCached();
     }
 
 }

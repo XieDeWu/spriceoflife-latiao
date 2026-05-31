@@ -17,9 +17,11 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.block.state.properties.IntegerProperty;
 import net.minecraft.world.phys.Vec3;
+import org.apache.commons.codec.digest.MurmurHash3;
 import org.jetbrains.annotations.NotNull;
 
 import java.lang.reflect.Field;
+import java.nio.charset.StandardCharsets;
 import java.util.*;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.IntStream;
@@ -34,7 +36,8 @@ public final class LevelOrgFoodValue {
     public final Map<Integer, ResourceLocation> usingConvertsTo = new HashMap<>();
 
     public static int getFoodHash(Item item, Integer bite) {
-        return (SpiceOfLifeLatiao.VERSION + ":" + item.toString().replace(" ", "") + ":" + (bite != null ? bite : "")).hashCode();
+        String key = (SpiceOfLifeLatiao.VERSION + ":" + item.toString().replace(" ", "") + ":" + (bite != null ? bite : ""));
+        return  MurmurHash3.hash32x86(key.getBytes(StandardCharsets.UTF_8));
     }
 
     public static Vec3 getBlockFoodInfo(@NotNull Player player, @NotNull ItemStack stack, Integer bite, FoodProperties _defaultFoodInfo, boolean sliceCalc, int flag) {

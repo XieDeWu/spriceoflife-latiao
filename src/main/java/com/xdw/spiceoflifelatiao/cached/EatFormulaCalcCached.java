@@ -6,8 +6,11 @@ import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
 
 import java.util.Optional;
+import java.util.Random;
 
 public class EatFormulaCalcCached {
+    private static final Random random = new Random(0);
+    private static long cachedID = random.nextInt();
     private static final FifoHashMap<String,Optional<EatFormulaContext>> values = new FifoHashMap<>(64);
 
     public static void addCached(Player player, ItemStack stack, Optional<EatFormulaContext> value,int flag){
@@ -22,7 +25,9 @@ public class EatFormulaCalcCached {
         var play = player.getStringUUID().hashCode();
         var itemID = stack.getItem().toString().replace(" ", "").hashCode();
         var gap = LevelCalcCached.gameTime /6;
-        return play + ":" + itemID + ":" + gap + ":" + flag;
+        return cachedID + play + ":" + itemID + ":" + gap + ":" + flag;
     }
-
+    public static void refreshCached(){
+        cachedID = random.nextLong();
+    }
 }

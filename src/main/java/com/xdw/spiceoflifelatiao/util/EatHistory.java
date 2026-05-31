@@ -2,9 +2,11 @@ package com.xdw.spiceoflifelatiao.util;
 
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.item.Item;
+import org.apache.commons.codec.digest.MurmurHash3;
 import org.jetbrains.annotations.NotNull;
 
 import java.io.*;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Optional;
 
@@ -33,6 +35,6 @@ public record EatHistory(ArrayList<Integer> foodHash, ArrayList<Float> hunger, A
         return Optional.empty();
     }
     public static int getFoodHash(@NotNull Item item){
-        return item.toString().replace(" ", "").hashCode();
+        return MurmurHash3.hash32x86(item.toString().replace(" ", "").getBytes(StandardCharsets.UTF_8));
     }
 }
