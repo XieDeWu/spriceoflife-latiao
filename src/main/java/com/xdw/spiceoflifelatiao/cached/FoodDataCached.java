@@ -12,13 +12,10 @@ import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.food.FoodProperties;
 import net.minecraft.world.item.ItemStack;
-import net.minecraft.world.phys.Vec3;
 import net.neoforged.neoforge.event.EventHooks;
 import net.neoforged.neoforge.network.PacketDistributor;
 
-import java.util.List;
-import java.util.Objects;
-import java.util.Optional;
+import java.util.*;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 
@@ -31,7 +28,7 @@ public class FoodDataCached {
     public static Optional<Integer> bites = Optional.empty();
     public static Optional<Integer> bite = Optional.empty();
     public static Optional<Integer> type = Optional.empty();
-    public static Optional<ItemStack> usingConvertsTo = Optional.empty();
+    public static Optional<List<ItemStack>> usingConvertsTo = Optional.empty();
     public static Optional<FoodProperties> foodProperties = Optional.empty();
     public static Optional<Integer> addHunger = Optional.empty();
     public static Optional<Float> addSaturation = Optional.empty();
@@ -54,77 +51,98 @@ public class FoodDataCached {
             acc.addEatHistory_Mem(foodHash, (float) realHunger.get(), realSaturation.get(), 1.0f / (float) bites.orElse(1), hungerRoundErr.orElse(0F));
         }
 //            方块食物与分装食物
-        if (player.isPresent() && item.isPresent() && bite.isPresent() && bites.isPresent()) {
+        //            方块食物与分装食物
+        if (player.isPresent() && player.get() instanceof ServerPlayer serverPlayer
+                && item.isPresent() && bite.isPresent() && bites.isPresent()) {
+            var level = serverPlayer.serverLevel();
+            var oldData = level.getData(ModAttachments.LEVEL_ORG_FOOD_VALUE);
+
+            // 创建新实例，避免因引用相同导致框架不触发同步
+            LevelOrgFoodValue newData = new LevelOrgFoodValue();
+            newData.hash.addAll(oldData.hash);
+            newData.hunger.putAll(oldData.hunger);
+            newData.saturation.putAll(oldData.saturation);
+            newData.bites.putAll(oldData.bites);
+            newData.bitesOffset.putAll(oldData.bitesOffset);
+            newData.bitesType.putAll(oldData.bitesType);
+            // 深拷贝内层 Map
+            oldData.usingConvertsTo.forEach((k, v) -> newData.usingConvertsTo.put(k, new HashMap<>(v)));
+
             var defHash = LevelOrgFoodValue.getFoodHash(item.get().getItem(), null);
             var curHash = LevelOrgFoodValue.getFoodHash(item.get().getItem(), bite.get());
-            var level = player.get().level();
-            var data = level.getData(ModAttachments.LEVEL_ORG_FOOD_VALUE);
 
             AtomicBoolean isChanged = new AtomicBoolean(false);
 
             // === hash ===
-            if (!data.hash.contains(defHash)) {
-                data.hash.add(defHash);
+            if (!newData.hash.contains(defHash)) {
+                newData.hash.add(defHash);
                 isChanged.set(true);
             }
-            if (!data.hash.contains(curHash)) {
-                data.hash.add(curHash);
+            if (!newData.hash.contains(curHash)) {
+                newData.hash.add(curHash);
                 isChanged.set(true);
             }
 
             // === hunger ===
             addHunger.ifPresent(newHunger -> {
-                Float oldHunger = data.hunger.get(curHash);
+                Float oldHunger = newData.hunger.get(curHash);
                 if (!Objects.equals(oldHunger, newHunger.floatValue())) {
-                    data.hunger.put(curHash, newHunger.floatValue());
+                    newData.hunger.put(curHash, newHunger.floatValue());
                     isChanged.set(true);
                 }
             });
 
             // === saturation ===
             addSaturation.ifPresent(newSaturation -> {
-                Float oldSaturation = data.saturation.get(curHash);
+                Float oldSaturation = newData.saturation.get(curHash);
                 if (!Objects.equals(oldSaturation, newSaturation)) {
-                    data.saturation.put(curHash, newSaturation);
+                    newData.saturation.put(curHash, newSaturation);
                     isChanged.set(true);
                 }
             });
 
             // === bites ===
             int newBites = FoodDataCached.bites.get();
-            if (!Objects.equals(data.bites.get(defHash), newBites)) {
-                data.bites.put(defHash, newBites);
+            if (!Objects.equals(newData.bites.get(defHash), newBites)) {
+                newData.bites.put(defHash, newBites);
                 isChanged.set(true);
             }
 
             // === bitesOffset ===
             int newOffset = FoodDataCached.accessOrderAdd == 1 ? 1 : 0;
-            if (!Objects.equals(data.bitesOffset.get(defHash), newOffset)) {
-                data.bitesOffset.put(defHash, newOffset);
+            if (!Objects.equals(newData.bitesOffset.get(defHash), newOffset)) {
+                newData.bitesOffset.put(defHash, newOffset);
                 isChanged.set(true);
             }
 
             // === bitesType ===
             type.ifPresent(newType -> {
-                var oldType = data.bitesType.get(defHash);
+                var oldType = newData.bitesType.get(defHash);
                 if (!Objects.equals(oldType, newType)) {
-                    data.bitesType.put(defHash, newType);
+                    newData.bitesType.put(defHash, newType);
                     isChanged.set(true);
                 }
             });
 
             // === usingConvertsTo ===
-            FoodDataCached.usingConvertsTo.ifPresent(stack -> {
-                ResourceLocation rl = BuiltInRegistries.ITEM.getKey(stack.getItem());
-                ResourceLocation old = data.usingConvertsTo.get(curHash);
-                if (!Objects.equals(old, rl)) {
-                    data.usingConvertsTo.put(curHash, rl);
+            FoodDataCached.usingConvertsTo.ifPresent(stacks -> {
+                // 将 List<ItemStack> 构建为保序的 TreeMap（按 ResourceLocation 自然序）
+                TreeMap<ResourceLocation, Integer> newMap = new TreeMap<>();
+                for (ItemStack stack : stacks) {
+                    ResourceLocation rl = BuiltInRegistries.ITEM.getKey(stack.getItem());
+                    newMap.merge(rl, stack.getCount(), Integer::sum);
+                }
+                Map<ResourceLocation, Integer> oldMap = newData.usingConvertsTo.get(curHash);
+                TreeMap<ResourceLocation, Integer> oldSorted =
+                        oldMap != null ? new TreeMap<>(oldMap) : new TreeMap<>();
+                if (!Objects.equals(oldSorted, newMap)) {
+                    newData.usingConvertsTo.put(curHash, new TreeMap<>(newMap));
                     isChanged.set(true);
                 }
             });
 
             if (isChanged.get()) {
-                level.setData(ModAttachments.LEVEL_ORG_FOOD_VALUE, data);
+                level.setData(ModAttachments.LEVEL_ORG_FOOD_VALUE, newData);
             }
         }
 

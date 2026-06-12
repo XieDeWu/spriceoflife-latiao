@@ -13,6 +13,8 @@ import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 
+import java.util.List;
+
 @Mixin(targets = "vectorwing.farmersdelight.common.block.FeastBlock")
 public class FeastBlockMixin {
 
@@ -24,7 +26,7 @@ public class FeastBlockMixin {
     @Inject(at = @At("RETURN"), method = "takeServing")
     public void takeServingEnd(LevelAccessor level, BlockPos pos, BlockState state, Player player, InteractionHand hand, CallbackInfoReturnable<ItemInteractionResult> cir) {
         if (cir.getReturnValue() == ItemInteractionResult.SUCCESS && FeastBlockCached.takeServing.isPresent()) {
-            FoodDataCached.usingConvertsTo = FeastBlockCached.takeServing;
+            FoodDataCached.usingConvertsTo = FeastBlockCached.takeServing.map(it-> List.of(it));
         }
         FeastBlockCached.end();
     }

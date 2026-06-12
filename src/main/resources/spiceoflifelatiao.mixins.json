@@ -12,6 +12,7 @@
     "StateHolderMixin",
     "linkage.farmersdelight.FeastBlockMixin",
     "linkage.farmersdelight.InventoryMixin",
+    "linkage.kaleidoscopecookery.PlateBlockMixin",
     "linkage.kaleidoscopecookery.TransmutationLunchBagItemMixin",
     "linkage.solcarrot.FoodListMixin",
     "linkage.solcarrot.FoodTrackerMixin",
