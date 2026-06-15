@@ -1,6 +1,5 @@
 package com.xdw.spiceoflifelatiao.mixin.linkage.kaleidoscopecookery;
 
-import com.github.ysbbbbbb.kaleidoscopecookery.block.decoration.PlateBlock;
 import com.xdw.spiceoflifelatiao.cached.FoodDataCached;
 import net.minecraft.core.BlockPos;
 import net.minecraft.world.InteractionHand;
@@ -22,7 +21,7 @@ import java.util.List;
 import java.util.Optional;
 import java.util.function.Supplier;
 
-@Mixin(PlateBlock.class)
+@Mixin(targets = "com.github.ysbbbbbb.kaleidoscopecookery.block.decoration.PlateBlock")
 public abstract class PlateBlockMixin {
     @Final
     @Shadow

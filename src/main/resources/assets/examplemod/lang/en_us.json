@@ -11,7 +11,5 @@
   "spiceoflifelatiao.configuration.SATURATION": "SATURATION",
   "spiceoflifelatiao.configuration.EAT_SECONDS": "EAT_SECONDS",
   "spiceoflifelatiao.configuration.BLACK_FOOD": "BLACK_FOOD",
-  "spiceoflifelatiao.tooltip.block_food.uncollected" : "food data non collected",
-  "spiceoflifelatiao.tooltip.block_food.uncollected.part" : "food data part collected",
-  "spiceoflifelatiao.tooltip.block_food.uncollected.food_item" : "food data non collected,showing item data"
+  "spiceoflifelatiao.tooltip.block_food.progress" : "FoodInfo collect progress (%d/%d)"
 }

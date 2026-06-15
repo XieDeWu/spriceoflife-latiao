@@ -56,7 +56,7 @@ public interface IItemExtensionMixin {
         stack.setCount(Math.max(1, stack.getCount()));
         EatHistory.recentEntity
                 .map(x -> x instanceof Player p ? p : null)
-                .map(rp -> LevelOrgFoodValue.getBlockFoodInfo(rp,stack,null,food.get(),true, (int)LevelCalcCached.gameTime))
+                .map(rp -> LevelOrgFoodValue.getBlockFoodInfo(rp,stack, null,null,food.get(),true, (int)LevelCalcCached.gameTime))
                 .ifPresent(vec3 -> {
                     nutrition.set((int) Math.round(vec3.x()));
                     saturation.set((float) vec3.y);

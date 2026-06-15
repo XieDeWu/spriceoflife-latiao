@@ -5,6 +5,7 @@ import com.mojang.serialization.Codec;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
 import com.xdw.spiceoflifelatiao.SpiceOfLifeLatiao;
 import com.xdw.spiceoflifelatiao.util.EatFormulaContext;
+import com.xdw.spiceoflifelatiao.util.MurmurHash3;
 import net.minecraft.core.component.DataComponents;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.network.FriendlyByteBuf;
@@ -18,12 +19,12 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.block.state.properties.IntegerProperty;
 import net.minecraft.world.phys.Vec3;
-import org.apache.commons.codec.digest.MurmurHash3;
 import org.jetbrains.annotations.NotNull;
 
 import java.lang.reflect.Field;
 import java.nio.charset.StandardCharsets;
 import java.util.*;
+import java.util.function.Supplier;
 import java.util.stream.IntStream;
 
 public final class LevelOrgFoodValue {
@@ -77,17 +78,15 @@ public final class LevelOrgFoodValue {
 //    }
 
     /**
-     * 获取方块食物信息的主方法
+     * 计算分片数与分片范围
      */
-    public static Vec3 getBlockFoodInfo(@NotNull Player player, @NotNull ItemStack stack, Integer bite,
-                                        FoodProperties _defaultFoodInfo, boolean sliceCalc, int flag) {
+    public static Optional<Map.Entry<Integer,List<Integer>>> getAbleBites(@NotNull Player player, @NotNull ItemStack stack, BlockState state, Integer bite
+            , boolean sliceCalc) {
         // 玩家未加载,调整食物信息无意义
-        Optional<FoodProperties> defInfo = Optional.ofNullable(_defaultFoodInfo);
-        if (!player.isAddedToLevel() || player.tickCount <= 0)
-            return defInfo.map(it -> new Vec3(it.nutrition(), it.saturation(), it.eatSeconds()))
-                    .orElse(new Vec3(0, 0, 1.6F));
+        if (!player.isAddedToLevel() || player.tickCount <= 0) return Optional.empty();
         // 计算物品分片逻辑以及范围
-        LevelOrgFoodValue data = sliceCalc ? player.level().getData(ModAttachments.LEVEL_ORG_FOOD_VALUE) : new LevelOrgFoodValue();
+        LevelOrgFoodValue data = sliceCalc ? player.level().getData(ModAttachments.LEVEL_ORG_FOOD_VALUE) :
+                new LevelOrgFoodValue();
         int defHash = LevelOrgFoodValue.getFoodHash(stack.getItem(), null);
         Optional<Integer> bites = Optional.ofNullable(data.bites.get(defHash));
         Optional<Integer> bitesOffset = Optional.ofNullable(data.bitesOffset.get(defHash));
@@ -95,9 +94,9 @@ public final class LevelOrgFoodValue {
         Optional<Integer> itemFoodBites = bites;
         bite = bite == null ? (bitesType.isPresent() && bitesType.get() == 1 ? bites.orElse(0) : 0) : bite;
         if (sliceCalc && !data.hash.contains(defHash) && stack.getItem() instanceof BlockItem bi) {
-            BlockState blockState = bi.getBlock().defaultBlockState();
+            BlockState blockState = state != null ? state : bi.getBlock().defaultBlockState();
             itemFoodBites = blockState.getValues().keySet().stream().map(comparable -> {
-                if (comparable instanceof IntegerProperty ip && ip.getName().equals("bites")) {
+                if (comparable instanceof IntegerProperty ip && (ip.getName().equals("bites") || ip.getName().equals("servings"))) {
                     try {
                         Field maxField = IntegerProperty.class.getDeclaredField("max");
                         maxField.setAccessible(true);
@@ -109,15 +108,34 @@ public final class LevelOrgFoodValue {
         }
         int finalBites = itemFoodBites.orElse(1);
 
-        /// 全bite展开 全bite范围补位 按ableBite范围选择性汇总
-
         // 计算bite顺位表
+        var ableBite = bitesType.isPresent() && bitesType.get() == 1
+                ? getEnumScope(1, bite + 1, bite, false)
+                : getEnumScope(bite, Math.max(bite, finalBites + bitesOffset.orElse(0)), bite, true);
+        return Optional.of(Map.entry(finalBites,ableBite));
+    }
+
+    /**
+     * 获取方块食物信息的主方法
+     */
+    public static Vec3 getBlockFoodInfo(@NotNull Player player, @NotNull ItemStack stack,BlockState state, Integer bite,
+                                        FoodProperties _defaultFoodInfo, boolean sliceCalc, int flag) {
+        // 玩家未加载,调整食物信息无意义
+        Optional<FoodProperties> defInfo = Optional.ofNullable(_defaultFoodInfo);
+        if (!player.isAddedToLevel() || player.tickCount <= 0)
+            return defInfo.map(it -> new Vec3(it.nutrition(), it.saturation(), it.eatSeconds()))
+                    .orElse(new Vec3(0, 0, 1.6F));
+
+        // 计算物品分片逻辑以及范围
+        LevelOrgFoodValue data = sliceCalc ? player.level().getData(ModAttachments.LEVEL_ORG_FOOD_VALUE) : new LevelOrgFoodValue();
+        var calcBites = getAbleBites(player, stack, state, bite, sliceCalc).orElse(Map.entry(0,List.of()));
+        var ableBite = calcBites.getValue();
+        var finalBites = calcBites.getKey();
+
+        // 全bite展开 全bite范围补位 按ableBite范围选择性汇总
         var allBiteHash = IntStream.range(0,16)
                 .mapToObj(it -> LevelOrgFoodValue.getFoodHash(stack.getItem(), it))
                 .toList();
-        var ableBite = bitesType.isPresent() && bitesType.get() == 1
-                ? getEnumScope(1, bite + 1,bite,false)
-                : getEnumScope(bite, Math.max(bite, finalBites + bitesOffset.orElse(0)),bite,true);
         var ableBiteHash = ableBite.stream()
                 .map(it -> LevelOrgFoodValue.getFoodHash(stack.getItem(), it))
                 .toList();
@@ -149,24 +167,24 @@ public final class LevelOrgFoodValue {
             return Map.entry(it,direct.or(()->convert));
         }).toList();
 
-        // 空的biteInfo尽可能用顺位邻居biteInfo补位
-        List<Map.Entry<Map.Entry<Integer, ItemStack>, Optional<FoodProperties>>> extendBiteInfo =
-                IntStream.range(0, flat2BiteInfo.size())
-                        .mapToObj(i -> {
-                            var entry = flat2BiteInfo.get(i);
-                            if (entry.getValue().isPresent()) return entry;
-                            // 找第一个有值的邻居
-                            var neighbor = IntStream.range(1, flat2BiteInfo.size())
-                                    .map(j -> (i + j) % flat2BiteInfo.size())
-                                    .mapToObj(flat2BiteInfo::get)
-                                    .filter(e -> e.getValue().isPresent())
-                                    .findFirst();
-                            // 如果有邻居，用原 hash + 邻居的 ItemStack + 邻居的 FoodProperties 构建新 entry
-                            return neighbor.map(n -> Map.entry(
-                                    Map.entry(entry.getKey().getKey(), n.getKey().getValue()),
-                                    n.getValue()
-                            )).orElse(entry);
-                        }).toList();
+        // 按 bite 保序分组,成组邻居补位
+        var biteGroups = flat2BiteInfo.stream().collect((Supplier<ArrayList<List<Map.Entry<Map.Entry<Integer,
+                ItemStack>, Optional<FoodProperties>>>>>) ArrayList::new, (list, e) -> {
+            if (list.isEmpty() || !Objects.equals(e.getKey().getKey(), list.getLast().getFirst().getKey().getKey()))
+                list.add(new ArrayList<>());
+            list.getLast().add(e);
+        }, (l, r) -> {throw new UnsupportedOperationException();});
+        var extendBiteInfo = IntStream.range(0, biteGroups.size()).mapToObj(idx -> {
+            var group = biteGroups.get(idx);
+            if (group.stream().anyMatch(e -> e.getValue().isPresent())) return group;
+            // 找第一个有信息的邻居组
+            var neighbor = IntStream.range(1, biteGroups.size())
+                    .mapToObj(d -> biteGroups.get((idx + d) % biteGroups.size()))
+                    .filter(g -> g.stream().anyMatch(e -> e.getValue().isPresent()))
+                    .findFirst();
+            return neighbor.map(n -> n.stream().map(ne -> Map.entry(Map.entry(group.getFirst().getKey().getKey(),
+                    ne.getKey().getValue()), ne.getValue())).toList()).orElse(group);
+        }).flatMap(Collection::stream).toList();
 
         // 若外部为此物品输入食物信息,优先使用外部定义
         List<Map.Entry<Map.Entry<Integer, ItemStack>, Optional<FoodProperties>>> redirectInfo =
@@ -199,20 +217,6 @@ public final class LevelOrgFoodValue {
                 .map(EatFormulaContext::hungerAccRoundErr).stream()
         ).findFirst().orElse(0F);
         return new Vec3(sumHunger + roundErr, sumSaturation, sumSecond / Math.max(1, sumCount));
-    }
-
-    public static Optional<Integer> getInfoFinishState(@NotNull Player player, @NotNull ItemStack stack) {
-        var data = player.level().getData(ModAttachments.LEVEL_ORG_FOOD_VALUE);
-        var defHash = LevelOrgFoodValue.getFoodHash(stack.getItem(),null);
-        if(!data.hash.contains(defHash)) return Optional.empty();
-        if (data.bitesType.get(defHash) instanceof Integer type
-                && data.bites.get(defHash) instanceof Integer bites
-                && data.bitesOffset.get(defHash) instanceof Integer offset
-        ) {
-            IntStream stream = type == 1 ? IntStream.range(1, bites + 1) : IntStream.range(0, bites + offset);
-            return Optional.of(stream.mapToObj(i -> data.hash.contains(LevelOrgFoodValue.getFoodHash(stack.getItem(), i))).anyMatch(i -> !i) ? 1 : 2);
-        }
-        return stack.get(DataComponents.FOOD) == null ? Optional.empty() : Optional.of(2);
     }
 
     static final class CustomCodec {

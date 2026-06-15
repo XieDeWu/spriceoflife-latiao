@@ -27,9 +27,11 @@ import snownee.jade.impl.ui.ElementHelper;
 import javax.annotation.Nullable;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
 
@@ -80,12 +82,11 @@ public class FoodInfoPlugin implements IWailaPlugin, IBlockComponentProvider {
     public void appendTooltip(ITooltip iTooltip, BlockAccessor blockAccessor, IPluginConfig iPluginConfig) {
         if (player.isEmpty() || stack.isEmpty()) return;
         var isBlockFood = isBlockFood(player.get(),stack.get(),blockAccessor.getBlockState());
-        var infoState = LevelOrgFoodValue.getInfoFinishState(player.get(), stack.get());
         var itemFoodInfo = stack.get().get(DataComponents.FOOD);
-        Vec3 blockFoodInfo = LevelOrgFoodValue.getBlockFoodInfo(player.get(), stack.get(), bite.orElse(0), itemFoodInfo, true, serialNumber.incrementAndGet());
+        Vec3 blockFoodInfo = LevelOrgFoodValue.getBlockFoodInfo(player.get(), stack.get(), blockAccessor.getBlockState(), bite.orElse(0), itemFoodInfo, true, serialNumber.incrementAndGet());
         List<@NotNull IElement> hud_hunger = new ArrayList<>();
         List<@NotNull IElement> hud_saturation = new ArrayList<>();
-        List<@NotNull IElement> hud_warn = new ArrayList<>();
+        List<@NotNull IElement> hud_tips = new ArrayList<>();
         List<@NotNull IElement> tempHudHunger = hud_hunger;
         AtomicBoolean needRevHunger = new AtomicBoolean(true);
         long ignored1 = Stream.iterate(Math.round(blockFoodInfo.x), s -> s > 0F, s -> {
@@ -129,17 +130,24 @@ public class FoodInfoPlugin implements IWailaPlugin, IBlockComponentProvider {
         if (Minecraft.getInstance().getResourceManager().getResource(RES_APPLESKIN).isPresent()) hud2.count();
         hud_saturation = needRevSaturation.get() ? tempHudSaturation.reversed() : tempHudSaturation;
         if (isBlockFood) {
-            var text = "";
-            if(infoState.isPresent()){
-                if(infoState.get() == 0 && itemFoodInfo == null) text = "spiceoflifelatiao.tooltip.block_food.uncollected";
-                if(infoState.get() == 0 && itemFoodInfo != null) text = "spiceoflifelatiao.tooltip.block_food.uncollected.food_item";
-                if(infoState.get() == 1 && itemFoodInfo != null) text = "spiceoflifelatiao.tooltip.block_food.uncollected.part";
+            var data = player.get().level().getData(ModAttachments.LEVEL_ORG_FOOD_VALUE);
+            int bites = LevelOrgFoodValue.getAbleBites(player.get(),stack.get(), blockAccessor.getBlockState(),bite.orElse(0),true)
+                    .map(Map.Entry::getKey).orElse(0);
+            var samples = IntStream.range(0,16)
+                    .mapToObj(a->LevelOrgFoodValue.getFoodHash(stack.get().getItem(),a))
+                    .filter(a->data.hunger.get(a) != null
+                            || data.saturation.get(a) != null
+                            || data.usingConvertsTo.get(a) != null
+                    ).count();
+            if(bites > 0 && samples < bites){
+                hud_tips.add(ElementHelper.INSTANCE.text(Component.literal(
+                        String.format("食物信息采集进度(%d/%d)",samples,bites)
+                ).withStyle(ChatFormatting.RED)));
             }
-            if(!text.isEmpty()) hud_warn.add(ElementHelper.INSTANCE.text(Component.translatable(text).withStyle(ChatFormatting.DARK_RED)));
         }
         iTooltip.add(hud_hunger);
         iTooltip.add(hud_saturation);
-        iTooltip.add(hud_warn);
+        iTooltip.add(hud_tips);
     }
     @Override
     public ResourceLocation getUid () {

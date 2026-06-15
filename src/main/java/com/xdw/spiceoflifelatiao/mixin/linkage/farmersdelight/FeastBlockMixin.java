@@ -26,7 +26,7 @@ public class FeastBlockMixin {
     @Inject(at = @At("RETURN"), method = "takeServing")
     public void takeServingEnd(LevelAccessor level, BlockPos pos, BlockState state, Player player, InteractionHand hand, CallbackInfoReturnable<ItemInteractionResult> cir) {
         if (cir.getReturnValue() == ItemInteractionResult.SUCCESS && FeastBlockCached.takeServing.isPresent()) {
-            FoodDataCached.usingConvertsTo = FeastBlockCached.takeServing.map(it-> List.of(it));
+            FoodDataCached.usingConvertsTo = FeastBlockCached.takeServing.map(List::of);
         }
         FeastBlockCached.end();
     }

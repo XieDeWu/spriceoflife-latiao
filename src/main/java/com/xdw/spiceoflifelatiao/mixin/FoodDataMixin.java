@@ -64,7 +64,7 @@ public abstract class FoodDataMixin implements IEatHistoryAcessor {
         FoodDataCached.addHunger = Optional.of(foodLevel);
         FoodDataCached.addSaturation = Optional.of(saturationLevel);
         if(FoodDataCached.player.isPresent() && FoodDataCached.item.isPresent() && !FoodDataCached.readFoodInfo){
-            Optional.of(LevelOrgFoodValue.getBlockFoodInfo(FoodDataCached.player.get(),FoodDataCached.item.get(),null,
+            Optional.of(LevelOrgFoodValue.getBlockFoodInfo(FoodDataCached.player.get(),FoodDataCached.item.get(), null,null,
                     FoodDataCached.item.map(i->i.get(DataComponents.FOOD)).orElse(null),
                     true, (int) LevelCalcCached.gameTime)).ifPresent(it->{
                 var addHunger = it.x / FoodDataCached.bites.orElse(1);
