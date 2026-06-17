@@ -3,6 +3,7 @@ package com.xdw.spiceoflifelatiao.linkage.jade;
 import com.xdw.spiceoflifelatiao.SpiceOfLifeLatiao;
 import com.xdw.spiceoflifelatiao.attachments.LevelOrgFoodValue;
 import com.xdw.spiceoflifelatiao.attachments.ModAttachments;
+import com.xdw.spiceoflifelatiao.cached.FoodDataCached;
 import net.minecraft.ChatFormatting;
 import net.minecraft.client.Minecraft;
 import net.minecraft.core.component.DataComponents;
@@ -49,6 +50,7 @@ public class FoodInfoPlugin implements IWailaPlugin, IBlockComponentProvider {
     public static Optional<Player> player = Optional.empty();
     public static Optional<ItemStack> stack = Optional.empty();
     public static Optional<Integer> bite = Optional.empty();
+    public static Optional<String> blockTagId = Optional.empty();
     private static final AtomicInteger serialNumber = new AtomicInteger(0);
     @OnlyIn(Dist.CLIENT)
     public void registerClient(IWailaClientRegistration registration) {
@@ -67,6 +69,12 @@ public class FoodInfoPlugin implements IWailaPlugin, IBlockComponentProvider {
                             && ("bites".equals(ip.getName()) || "servings".equals(ip.getName()))
                     ).map(p -> acc.getBlockState().getValue((IntegerProperty) p))
                     .findFirst();
+            blockTagId = acc.getBlockState()
+                    .getProperties()
+                    .stream()
+                    .filter(p -> p instanceof IntegerProperty ip && "quality".equals(ip.getName())
+                    ).map(p -> blockTagId.orElse("") + "quality:" + acc.getBlockState().getValue((IntegerProperty) p))
+                    .findFirst();
             return accessor;
         });
     }
@@ -75,6 +83,7 @@ public class FoodInfoPlugin implements IWailaPlugin, IBlockComponentProvider {
         player = Optional.empty();
         stack = Optional.empty();
         bite = Optional.empty();
+        blockTagId = Optional.empty();
     }
 
     @Override
@@ -82,8 +91,8 @@ public class FoodInfoPlugin implements IWailaPlugin, IBlockComponentProvider {
     public void appendTooltip(ITooltip iTooltip, BlockAccessor blockAccessor, IPluginConfig iPluginConfig) {
         if (player.isEmpty() || stack.isEmpty()) return;
         var isBlockFood = isBlockFood(player.get(),stack.get(),blockAccessor.getBlockState());
-        var itemFoodInfo = stack.get().get(DataComponents.FOOD);
-        Vec3 blockFoodInfo = LevelOrgFoodValue.getBlockFoodInfo(player.get(), stack.get(), blockAccessor.getBlockState(), bite.orElse(0), itemFoodInfo, true, serialNumber.incrementAndGet());
+//        var itemFoodInfo = stack.get().get(DataComponents.FOOD);
+        Vec3 blockFoodInfo = LevelOrgFoodValue.getBlockFoodInfo(player.get(), stack.get(), blockAccessor.getBlockState(), bite.orElse(0),blockTagId.orElse(null), null, true, serialNumber.incrementAndGet());
         List<@NotNull IElement> hud_hunger = new ArrayList<>();
         List<@NotNull IElement> hud_saturation = new ArrayList<>();
         List<@NotNull IElement> hud_tips = new ArrayList<>();
@@ -131,10 +140,10 @@ public class FoodInfoPlugin implements IWailaPlugin, IBlockComponentProvider {
         hud_saturation = needRevSaturation.get() ? tempHudSaturation.reversed() : tempHudSaturation;
         if (isBlockFood) {
             var data = player.get().level().getData(ModAttachments.LEVEL_ORG_FOOD_VALUE);
-            int bites = LevelOrgFoodValue.getAbleBites(player.get(),stack.get(), blockAccessor.getBlockState(),bite.orElse(0),true)
+            int bites = LevelOrgFoodValue.getAbleBites(player.get(),stack.get(), blockAccessor.getBlockState(),bite.orElse(0),blockTagId.orElse(null),true)
                     .map(Map.Entry::getKey).orElse(0);
             var samples = IntStream.range(0,16)
-                    .mapToObj(a->LevelOrgFoodValue.getFoodHash(stack.get().getItem(),a))
+                    .mapToObj(a->LevelOrgFoodValue.getFoodHash(stack.get().getItem(),a,blockTagId.orElse(null)))
                     .filter(a->data.hunger.get(a) != null
                             || data.saturation.get(a) != null
                             || data.usingConvertsTo.get(a) != null
@@ -158,7 +167,7 @@ public class FoodInfoPlugin implements IWailaPlugin, IBlockComponentProvider {
             return false;
         if(stack.get(DataComponents.FOOD) != null) return true;
         LevelOrgFoodValue data = player.level().getData(ModAttachments.LEVEL_ORG_FOOD_VALUE);
-        int defHash = LevelOrgFoodValue.getFoodHash(stack.getItem(), null);
+        int defHash = LevelOrgFoodValue.getFoodHash(stack.getItem(), null, blockTagId.orElse(null));
         boolean isBlockFood = Optional.ofNullable(data.bites.get(defHash)).isPresent();
         if (!isBlockFood && !data.hash.contains(defHash) && stack.getItem() instanceof BlockItem bi) {
             isBlockFood = state.getValues().keySet().stream().anyMatch(comparable -> comparable instanceof IntegerProperty ip && (ip.getName().equals("bites") || ip.getName().equals("servings")));

@@ -19,22 +19,26 @@ public class StateHolderMixin {
         if(FoodDataCached.flag
 //                && Integer.class.isAssignableFrom(property.getValueClass())
                 && property instanceof IntegerProperty intProp
-                && (property.getName().equals("bites") || property.getName().equals("servings"))
         ){
-            int type = -1;
-            if(property.getName().equals("bites")) type = 0;
-            if(property.getName().equals("servings")) type = 1;
-            if(type == -1) return;
-            try {
-                Field maxField = IntegerProperty.class.getDeclaredField("max");
-                maxField.setAccessible(true);
-                int max = (int) maxField.get(intProp);
-                FoodDataCached.bites = FoodDataCached.bites.or(()-> Optional.of(max));
-                FoodDataCached.bite = FoodDataCached.bite.or(()->Optional.of(cir.getReturnValueI()));
-                FoodDataCached.type = Optional.of(type);
-                if(FoodDataCached.accessOrderGetValue == 0) FoodDataCached.accessOrderGetValue = FoodDataCached.numSeq.getAndIncrement();
-            } catch (Exception ignored) {
+            if(property.getName().equals("bites") || property.getName().equals("servings")){
+                int type = -1;
+                if(property.getName().equals("bites")) type = 0;
+                if(property.getName().equals("servings")) type = 1;
+                if(type == -1) return;
+                try {
+                    Field maxField = IntegerProperty.class.getDeclaredField("max");
+                    maxField.setAccessible(true);
+                    int max = (int) maxField.get(intProp);
+                    FoodDataCached.bites = FoodDataCached.bites.or(()-> Optional.of(max));
+                    FoodDataCached.bite = FoodDataCached.bite.or(()->Optional.of(cir.getReturnValueI()));
+                    FoodDataCached.type = Optional.of(type);
+                    if(FoodDataCached.accessOrderGetValue == 0) FoodDataCached.accessOrderGetValue = FoodDataCached.numSeq.getAndIncrement();
+                } catch (Exception ignored) {
 
+                }
+            }
+            if(property.getName().equals("quality")){
+                FoodDataCached.blockTagId = Optional.of("quality:" + cir.getReturnValue());
             }
         }
     }

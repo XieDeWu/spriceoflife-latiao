@@ -35,6 +35,7 @@ public class FoodDataCached {
     public static Optional<Integer> realHunger = Optional.empty();
     public static Optional<Float> realSaturation = Optional.empty();
     public static Optional<Float> hungerRoundErr = Optional.empty();
+    public static Optional<String> blockTagId = Optional.empty();
     public static int accessOrderGetValue = 0;
     public static int accessOrderAdd = 0;
     public static AtomicInteger numSeq = new AtomicInteger(1);
@@ -50,7 +51,6 @@ public class FoodDataCached {
             PacketDistributor.sendToPlayer(serverPlayer, new AddEatHistoryMsg(foodHash, (float) realHunger.get(), realSaturation.get(), 1.0f / (float) bites.orElse(1), hungerRoundErr.orElse(0F)));
             acc.addEatHistory_Mem(foodHash, (float) realHunger.get(), realSaturation.get(), 1.0f / (float) bites.orElse(1), hungerRoundErr.orElse(0F));
         }
-//            方块食物与分装食物
         //            方块食物与分装食物
         if (player.isPresent() && player.get() instanceof ServerPlayer serverPlayer
                 && item.isPresent() && bite.isPresent() && bites.isPresent()) {
@@ -68,8 +68,8 @@ public class FoodDataCached {
             // 深拷贝内层 Map
             oldData.usingConvertsTo.forEach((k, v) -> newData.usingConvertsTo.put(k, new HashMap<>(v)));
 
-            var defHash = LevelOrgFoodValue.getFoodHash(item.get().getItem(), null);
-            var curHash = LevelOrgFoodValue.getFoodHash(item.get().getItem(), bite.get());
+            var defHash = LevelOrgFoodValue.getFoodHash(item.get().getItem(), null,blockTagId.orElse(null));
+            var curHash = LevelOrgFoodValue.getFoodHash(item.get().getItem(), bite.get(), blockTagId.orElse(null));
 
             AtomicBoolean isChanged = new AtomicBoolean(false);
 
@@ -192,6 +192,7 @@ public class FoodDataCached {
         realHunger = Optional.empty();
         realSaturation = Optional.empty();
         hungerRoundErr = Optional.empty();
+        blockTagId = Optional.empty();
         accessOrderGetValue = 0;
         accessOrderAdd = 0;
         numSeq = new AtomicInteger(1);
