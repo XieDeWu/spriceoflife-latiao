@@ -1,5 +1,8 @@
 package com.xdw.spiceoflifelatiao.mixin;
 
+import com.llamalad7.mixinextras.injector.wrapoperation.Operation;
+import com.llamalad7.mixinextras.injector.wrapoperation.WrapOperation;
+import com.llamalad7.mixinextras.sugar.Local;
 import com.xdw.spiceoflifelatiao.attachments.LevelOrgFoodValue;
 import com.xdw.spiceoflifelatiao.cached.ConfigCached;
 import com.xdw.spiceoflifelatiao.cached.FoodDataCached;
@@ -10,6 +13,7 @@ import com.xdw.spiceoflifelatiao.util.IEatHistoryAcessor;
 import net.minecraft.core.component.DataComponents;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.util.Mth;
+import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.food.FoodData;
 import net.minecraft.world.food.FoodProperties;
 import org.spongepowered.asm.mixin.Mixin;
@@ -135,5 +139,18 @@ public abstract class FoodDataMixin implements IEatHistoryAcessor {
         queueSaturation.subList(size,queueSaturation.size()).clear();
         queueEaten.subList(size,queueEaten.size()).clear();
         return Optional.empty();
+    }
+
+
+
+    // 饥饿度亏空转化为饥饿伤害 精准拦截 tick 里的 Math.max(this.foodLevel - 1, 0)
+    @WrapOperation(method = "tick", at = @At(value = "INVOKE", target = "Ljava/lang/Math;max(II)I"))
+    private int onHungerDecrease(int a, int b, Operation<Integer> original, @Local(argsOnly = true) Player player) {
+        if(a < 0) {
+            player.invulnerableTime = 0;
+            player.hurt(player.damageSources().starve(), 1.0F);
+        }
+
+        return original.call(a, b);
     }
 }

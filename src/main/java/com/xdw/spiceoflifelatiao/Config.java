@@ -69,7 +69,7 @@ public class Config {
 
     public static final ModConfigSpec.ConfigValue<List<? extends String>> LOSS = BUILDER
             .comment("默认：固定系数、饥饿程度、短期营养、短期摄入、过饱和、盔甲值、亮度、湿漉、方块速度系数、玩家状态、玩家睡眠中、玩家未睡眠时长")
-            .defineListAllowEmpty("LOSS", List.of("0.005",
+            .defineListAllowEmpty("LOSS", List.of("0.006",
                     "*2^(HUNGER_LEVEL/20-1)",
                     "*0.5^(SUM_SATURATION_SHORT/max(SUM_HUNGER_SHORT,1)-1)",
                     "*2^((SUM_SATURATION_SHORT+SUM_HUNGER_SHORT)/128 -1)",
@@ -80,7 +80,7 @@ public class Config {
                     "*(2-BLOCK_SPEED_FACTOR)",
                     "*0.8^PLAYER_BUFF",
                     "*1.5^PLAYER_DEBUFF",
-                    "*(1-0.4*PLAYER_ZZZ)",
+                    "*(1+0.1*PLAYER_ZZZ)",
                     "*(2-3/(3+PLAYER_UN_SLEEPTIME/24000))"
             ),()->"",it->it instanceof String);
 
