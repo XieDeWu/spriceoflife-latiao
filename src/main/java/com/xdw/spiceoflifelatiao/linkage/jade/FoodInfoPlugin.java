@@ -165,7 +165,7 @@ public class FoodInfoPlugin implements IWailaPlugin, IBlockComponentProvider {
     public boolean isBlockFood(@NotNull Player player,@NotNull ItemStack stack,@NotNull BlockState state){
         if (!player.isAddedToLevel() || player.tickCount <= 0)
             return false;
-        if(stack.get(DataComponents.FOOD) != null) return true;
+//        if(stack.get(DataComponents.FOOD) != null) return true;
         LevelOrgFoodValue data = player.level().getData(ModAttachments.LEVEL_ORG_FOOD_VALUE);
         int defHash = LevelOrgFoodValue.getFoodHash(stack.getItem(), null, blockTagId.orElse(null));
         boolean isBlockFood = Optional.ofNullable(data.bites.get(defHash)).isPresent();
