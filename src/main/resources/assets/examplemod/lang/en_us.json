@@ -4,6 +4,7 @@
   "spiceoflifelatiao.configuration.enable_hunger": "Enable_Hunger",
   "spiceoflifelatiao.configuration.enable_saturation": "Enable_Saturation",
   "spiceoflifelatiao.configuration.enable_eat_seconds": "Enable_Eat_Seconds",
+  "spiceoflifelatiao.configuration.enable_actions_loss": "Enable_Actions_Loss",
   "spiceoflifelatiao.configuration.historyLengthLong": "HistoryLengthLong",
   "spiceoflifelatiao.configuration.historyLengthShort": "HistoryLengthShort",
   "spiceoflifelatiao.configuration.LOSS": "LOSS",
@@ -11,5 +12,13 @@
   "spiceoflifelatiao.configuration.SATURATION": "SATURATION",
   "spiceoflifelatiao.configuration.EAT_SECONDS": "EAT_SECONDS",
   "spiceoflifelatiao.configuration.BLACK_FOOD": "BLACK_FOOD",
-  "spiceoflifelatiao.tooltip.block_food.progress" : "FoodInfo collect progress (%d/%d)"
+  "spiceoflifelatiao.tooltip.block_food.progress" : "FoodInfo collect progress (%d/%d)",
+  "spiceoflifelatiao.configuration.ACTIONS_LOSS": "ACTIONS_LOSS",
+  "spiceoflifelatiao.configuration.ACTION_MOVE": "ACTION_MOVE",
+  "spiceoflifelatiao.configuration.ACTION_JUMP": "ACTION_JUMP",
+  "spiceoflifelatiao.configuration.ACTION_SWIM": "ACTION_SWIM",
+  "spiceoflifelatiao.configuration.ACTION_CLIMB": "ACTION_CLIMB",
+  "spiceoflifelatiao.configuration.ACTION_CLICK": "ACTION_CLICK",
+  "spiceoflifelatiao.configuration.ACTION_USE": "ACTION_USE",
+  "spiceoflifelatiao.configuration.ACTION_FLYING": "ACTION_FLYING"
 }

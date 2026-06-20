@@ -4,6 +4,7 @@
   "spiceoflifelatiao.configuration.enable_hunger": "启用饥饿值调整",
   "spiceoflifelatiao.configuration.enable_saturation": "启用饱和度调整",
   "spiceoflifelatiao.configuration.enable_eat_seconds": "启用食用时间调整",
+  "spiceoflifelatiao.configuration.enable_actions_loss": "启用动作消耗",
   "spiceoflifelatiao.configuration.historyLengthLong": "长期食用历史长度",
   "spiceoflifelatiao.configuration.historyLengthShort": "短期食用历史长度",
   "spiceoflifelatiao.configuration.LOSS": "默认自然饥饿公式",
@@ -11,5 +12,13 @@
   "spiceoflifelatiao.configuration.SATURATION": "默认饱和度公式",
   "spiceoflifelatiao.configuration.EAT_SECONDS": "默认食用时间公式",
   "spiceoflifelatiao.configuration.BLACK_FOOD": "黑名单食物",
-  "spiceoflifelatiao.tooltip.block_food.progress" : "食物信息采集进度(%d/%d)"
+  "spiceoflifelatiao.tooltip.block_food.progress" : "食物信息采集进度(%d/%d)",
+  "spiceoflifelatiao.configuration.ACTIONS_LOSS": "动作消耗",
+  "spiceoflifelatiao.configuration.ACTION_MOVE": "移动",
+  "spiceoflifelatiao.configuration.ACTION_JUMP": "跳跃",
+  "spiceoflifelatiao.configuration.ACTION_SWIM": "游泳",
+  "spiceoflifelatiao.configuration.ACTION_CLIMB": "攀爬",
+  "spiceoflifelatiao.configuration.ACTION_CLICK": "点击",
+  "spiceoflifelatiao.configuration.ACTION_USE": "使用",
+  "spiceoflifelatiao.configuration.ACTION_FLYING": "飞行"
 }

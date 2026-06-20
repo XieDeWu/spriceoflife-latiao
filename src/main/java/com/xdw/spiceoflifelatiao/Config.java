@@ -45,26 +45,29 @@ public class Config {
             .comment("EAT_SECONDS 食物食用时间")
             .define("enable_change",true);
 
-    public static final ModConfigSpec.ConfigValue<Boolean> EANBLE_LOSS = BUILDER
-            .comment("启用自然饥饿调整")
+    public static final ModConfigSpec.ConfigValue<Boolean> ENABLE_LOSS = BUILDER
+//            .comment("启用自然饥饿调整")
             .define("enable_loss",true);
 
-    public static final ModConfigSpec.ConfigValue<Boolean> EANBLE_HUNGER = BUILDER
-            .comment("启用饥饿值调整")
+    public static final ModConfigSpec.ConfigValue<Boolean> ENABLE_HUNGER = BUILDER
+//            .comment("启用饥饿值调整")
             .define("enable_hunger",true);
-    public static final ModConfigSpec.ConfigValue<Boolean> EANBLE_SATURATION = BUILDER
-            .comment("启用饱和度调整")
+    public static final ModConfigSpec.ConfigValue<Boolean> ENABLE_SATURATION = BUILDER
+//            .comment("启用饱和度调整")
             .define("enable_saturation",true);
-    public static final ModConfigSpec.ConfigValue<Boolean> EANBLE_EAT_SECONDS = BUILDER
-            .comment("启用食用时间调整")
+    public static final ModConfigSpec.ConfigValue<Boolean> ENABLE_EAT_SECONDS = BUILDER
+//            .comment("启用食用时间调整")
             .define("enable_eat_seconds",true);
+    public static final ModConfigSpec.ConfigValue<Boolean> ENABLE_ACTIONS_LOSS = BUILDER
+//            .comment("启用动作消耗调整")
+            .define("enable_actions_loss",true);
 
     public static final ModConfigSpec.ConfigValue<Integer> HISTORY_LENGTH_LONG = BUILDER
-            .comment("用于统计长期饮食数据")
+//            .comment("用于统计长期饮食数据")
             .defineInRange("historyLengthLong", 512, 0, 65535);
 
     public static final ModConfigSpec.ConfigValue<Integer> HISTORY_LENGTH_SHORT = BUILDER
-            .comment("用于统计短期饮食数据")
+//            .comment("用于统计短期饮食数据")
             .defineInRange("historyLengthShort", 16, 0, 65535);
 
     public static final ModConfigSpec.ConfigValue<List<? extends String>> LOSS = BUILDER
@@ -81,7 +84,7 @@ public class Config {
                     "*0.8^PLAYER_BUFF",
                     "*1.5^PLAYER_DEBUFF",
                     "*(1+0.1*PLAYER_ZZZ)",
-                    "*(2-3/(3+PLAYER_UN_SLEEPTIME/24000))"
+                    "*(2-3/(3+PLAYER_UN_SLEEPTIME/12000))"
             ),()->"",it->it instanceof String);
 
     public static final ModConfigSpec.ConfigValue<List<? extends String>> HUNGER = BUILDER
@@ -115,6 +118,17 @@ public class Config {
                     "minecraft:golden_apple,0.25",
                     "minecraft:enchanted_golden_apple"
             ),()->"minecraft:apple",it->it instanceof String);
+
+
+    static { BUILDER.push("ACTIONS_LOSS"); }
+    public static final ModConfigSpec.ConfigValue<Double> ACTION_MOVE   = BUILDER.defineInRange("ACTION_MOVE"   , 0.003D,0D,1D);
+    public static final ModConfigSpec.ConfigValue<Double> ACTION_JUMP   = BUILDER.defineInRange("ACTION_JUMP"   , 0.015D,0D,1D);
+    public static final ModConfigSpec.ConfigValue<Double> ACTION_SWIM   = BUILDER.defineInRange("ACTION_SWIM"   , 0.015D,0D,1D);
+    public static final ModConfigSpec.ConfigValue<Double> ACTION_CLIMB  = BUILDER.defineInRange("ACTION_CLIMB"  , 0.015D,0D,1D);
+    public static final ModConfigSpec.ConfigValue<Double> ACTION_CLICK  = BUILDER.defineInRange("ACTION_CLICK"  , 0.015D,0D,1D);
+    public static final ModConfigSpec.ConfigValue<Double> ACTION_USE    = BUILDER.defineInRange("ACTION_USE"    , 0.015D,0D,1D);
+    public static final ModConfigSpec.ConfigValue<Double> ACTION_FLYING  = BUILDER.defineInRange("ACTION_FLYING", 0.045D,0D,1D);
+    static { BUILDER.pop(); }
 
     static final ModConfigSpec SPEC = BUILDER.build();
 

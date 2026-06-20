@@ -9,6 +9,7 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.state.BlockBehaviour;
 import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.world.level.block.state.properties.IntegerProperty;
 import net.minecraft.world.phys.BlockHitResult;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Shadow;
@@ -26,6 +27,13 @@ public abstract class BlockStateBaseMixin {
     @Inject(at = @At(value = "HEAD"), method = "useWithoutItem")
     public void useWithoutItemBefore(Level level, Player player, BlockHitResult hitResult, CallbackInfoReturnable<InteractionResult> cir) {
         FoodDataCached.start(Optional.ofNullable(player),Optional.of(asState().getBlock().asItem().getDefaultInstance()));
+        FoodDataCached.state = Optional.ofNullable(asState());
+        FoodDataCached.blockTagId = asState()
+                .getProperties()
+                .stream()
+                .filter(p -> p instanceof IntegerProperty ip && "quality".equals(ip.getName())
+                ).map(p -> "quality:" + asState().getValue((IntegerProperty) p))
+                .findFirst();
     }
     @Inject(at = @At(value = "TAIL"), method = "useWithoutItem")
     public void useWithoutItemAfter(Level level, Player player, BlockHitResult hitResult, CallbackInfoReturnable<InteractionResult> cir) {
@@ -35,6 +43,13 @@ public abstract class BlockStateBaseMixin {
     @Inject(at = @At(value = "HEAD"), method = "useItemOn")
     public void useItemOnStart(ItemStack stack, Level level, Player player, InteractionHand hand, BlockHitResult hitResult, CallbackInfoReturnable<ItemInteractionResult> cir) {
         FoodDataCached.start(Optional.ofNullable(player),Optional.of(asState().getBlock().asItem().getDefaultInstance()));
+        FoodDataCached.state = Optional.ofNullable(asState());
+        FoodDataCached.blockTagId = asState()
+                .getProperties()
+                .stream()
+                .filter(p -> p instanceof IntegerProperty ip && "quality".equals(ip.getName())
+                ).map(p -> "quality:" + asState().getValue((IntegerProperty) p))
+                .findFirst();
     }
 
     @Inject(at = @At(value = "TAIL"), method = "useItemOn")

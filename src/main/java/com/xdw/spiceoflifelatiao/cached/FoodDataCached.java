@@ -12,6 +12,7 @@ import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.food.FoodProperties;
 import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.level.block.state.BlockState;
 import net.neoforged.neoforge.event.EventHooks;
 import net.neoforged.neoforge.network.PacketDistributor;
 
@@ -25,6 +26,7 @@ public class FoodDataCached {
     public static boolean readFoodInfo = false;
     public static Optional<Player> player = Optional.empty();
     public static Optional<ItemStack> item = Optional.empty();
+    public static Optional<BlockState> state = Optional.empty();
     public static Optional<Integer> bites = Optional.empty();
     public static Optional<Integer> bite = Optional.empty();
     public static Optional<Integer> type = Optional.empty();
@@ -46,7 +48,12 @@ public class FoodDataCached {
     }
     public static void end(){
 //        添加饮食记录 一般饮食行为
-        if (player.isPresent() && player.get() instanceof ServerPlayer serverPlayer && serverPlayer.getFoodData() instanceof IEatHistoryAcessor acc && item.isPresent() && realHunger.isPresent() && realSaturation.isPresent()) {
+        if (player.isPresent()
+                && player.get() instanceof ServerPlayer serverPlayer
+                && serverPlayer.getFoodData() instanceof IEatHistoryAcessor acc
+                && item.isPresent() && realHunger.isPresent()
+                && realSaturation.isPresent()
+        ) {
             int foodHash = EatHistory.getFoodHash(item.get().getItem());
             PacketDistributor.sendToPlayer(serverPlayer, new AddEatHistoryMsg(foodHash, (float) realHunger.get(), realSaturation.get(), 1.0f / (float) bites.orElse(1), hungerRoundErr.orElse(0F)));
             acc.addEatHistory_Mem(foodHash, (float) realHunger.get(), realSaturation.get(), 1.0f / (float) bites.orElse(1), hungerRoundErr.orElse(0F));
@@ -182,6 +189,7 @@ public class FoodDataCached {
         readFoodInfo = false;
         player = Optional.empty();
         item = Optional.empty();
+        state = Optional.empty();
         bites = Optional.empty();
         bite = Optional.empty();
         type = Optional.empty();

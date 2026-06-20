@@ -21,9 +21,12 @@ import net.minecraft.world.level.block.state.properties.IntegerProperty;
 import net.minecraft.world.phys.Vec3;
 import org.jetbrains.annotations.NotNull;
 
+import java.lang.reflect.AnnotatedType;
 import java.lang.reflect.Field;
 import java.nio.charset.StandardCharsets;
 import java.util.*;
+import java.util.concurrent.atomic.AtomicReference;
+import java.util.function.Function;
 import java.util.function.Supplier;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
@@ -38,6 +41,10 @@ public final class LevelOrgFoodValue {
     public final Map<Integer, Integer> bitesOffset = new HashMap<>();
     public final Map<Integer, Integer> bitesType = new HashMap<>();
     public final Map<Integer, Map<ResourceLocation, Integer>> usingConvertsTo = new HashMap<>();
+
+    //食物单片舍入补正
+    public static final HashMap<UUID,Map.Entry<AtomicReference<Float>,AtomicReference<Float>>>
+            divRoundErr = HashMap.newHashMap(16);
 
     public static int getFoodHash(Item item, Integer bite,String id) {
         String key = SpiceOfLifeLatiao.VERSION
@@ -68,18 +75,6 @@ public final class LevelOrgFoodValue {
         return result;
     }
 
-//    /**
-//     * 当物品组仅包含一个条目时，返回该物品的原始营养（不乘数量），用于保持旧版 fallback 链兼容。
-//     * 若组大小 != 1 或物品无效，返回 Optional.empty()。
-//     */
-//    private static Optional<Vec3> getSingleConvertNutrition(Map<ResourceLocation, Integer> converts) {
-//        if (converts == null || converts.size() != 1) return Optional.empty();
-//        Map.Entry<ResourceLocation, Integer> entry = converts.entrySet().iterator().next();
-//        Item item = BuiltInRegistries.ITEM.get(entry.getKey());
-//        FoodProperties food = item.getDefaultInstance().get(DataComponents.FOOD);
-//        if (food == null) return Optional.empty();
-//        return Optional.of(new Vec3(food.nutrition(), food.saturation(), 0));
-//    }
 
     /**
      * 计算分片数与分片范围
@@ -199,29 +194,36 @@ public final class LevelOrgFoodValue {
                     ne.getKey().getValue()), ne.getValue())).toList()).orElse(group);
         }).flatMap(Collection::stream).toList();
 
-        // 补充集 若依然无数据 用其物品形式的食物数据模拟单片来补位
+        // 补充集 优先使用外部定义 若依然无数据 用其物品形式的食物数据模拟单片来补位
+//        HashMap<UUID,AtomicReference<Float>> tempRoundErr = divRoundErr.computeIfAbsent(player.getUUID(),);
+        var errKV = divRoundErr.computeIfAbsent(player.getUUID(), rr -> Map.entry(new AtomicReference<>(0F),new AtomicReference<>(0F)));
+        var curErr = errKV.getKey();
+        var nextErr = new AtomicReference<>(curErr.get());
+        Function<FoodProperties,FoodProperties> roundCalc = def->{
+            float target = sliceCalc
+                    ? (def.nutrition() + nextErr.get()) / (float) finalBites
+                    : (def.nutrition() + nextErr.get());
+            int real = Math.round(target);
+            nextErr.updateAndGet(v -> v + target - real);
+            return new FoodProperties(
+                    real,
+                    sliceCalc ? def.saturation() / (float) finalBites : def.saturation(),
+                    def.canAlwaysEat(),
+                    def.eatSeconds(),
+                    def.usingConvertsTo(),
+                    def.effects());
+        };
         var extStackInfo = extSideBiteInfo.stream().map(it -> Map.entry(
                 it.getKey(),
-                it.getValue().or(() -> Optional.ofNullable(stack.get(DataComponents.FOOD)).map(def -> new FoodProperties(
-                        Math.round(sliceCalc ? def.nutrition() / (float) finalBites : def.nutrition()),
-                        sliceCalc ? def.saturation() / (float) finalBites : def.saturation(),
-                        def.canAlwaysEat(),
-                        def.eatSeconds(),
-                        def.usingConvertsTo(),
-                        def.effects())))
-        )).toList();
-
-        // 若外部为此物品输入食物信息,优先使用外部定义
-        var redirectInfo = extStackInfo.stream().map(it -> Map.entry(it.getKey(),
-                defInfo.map(def -> new FoodProperties(Math.round(sliceCalc ?
-                        def.nutrition() / (float) finalBites : def.nutrition()), sliceCalc ?
-                        def.saturation() / (float) finalBites : def.saturation(), def.canAlwaysEat(),
-                        def.eatSeconds(), def.usingConvertsTo(), def.effects())).or(it::getValue))).toList();
+                defInfo.map(roundCalc)
+                        .or(() -> it.getValue())
+                        .or(() -> Optional.ofNullable(stack.get(DataComponents.FOOD)).map(roundCalc)
+        ))).toList();
 
         // 套公式
         var stackOne = stack.copy();
         stackOne.setCount(1);
-        var calcOutput = redirectInfo.stream()
+        var calcOutput = extStackInfo.stream()
                 .filter(entry -> ableBiteHash.stream().anyMatch(i -> Objects.equals(i, entry.getKey().getKey())))
                 .flatMap(it -> it.getValue().stream().map(b -> Map.entry(
                         it.getKey().getValue().orElse(stackOne),b

@@ -46,14 +46,14 @@ public record EatFormulaContext(
     public static Optional<EatFormulaContext> configLimit(Optional<EatFormulaContext> value,FoodProperties defaultFoodProperties){
         if(value.isEmpty()) return value;
         var v = value.get();
-        float loss = ConfigCached.EANBLE_LOSS ? v.loss : 0f;
+        float loss = ConfigCached.ENABLE_LOSS ? v.loss : 0f;
         float hunger = v.hunger;
         float saturation = v.saturation;
         float eat_seconds = v.eat_seconds;
         if(defaultFoodProperties != null){
-            hunger = ConfigCached.EANBLE_HUNGER ? v.hunger : defaultFoodProperties.nutrition();
-            saturation = ConfigCached.EANBLE_SATURATION ? v.saturation : defaultFoodProperties.saturation();
-            eat_seconds = ConfigCached.EANBLE_EAT_SECONDS ? v.eat_seconds : defaultFoodProperties.eatSeconds();
+            hunger = ConfigCached.ENABLE_HUNGER ? v.hunger : defaultFoodProperties.nutrition();
+            saturation = ConfigCached.ENABLE_SATURATION ? v.saturation : defaultFoodProperties.saturation();
+            eat_seconds = ConfigCached.ENABLE_EAT_SECONDS ? v.eat_seconds : defaultFoodProperties.eatSeconds();
         }
         return Optional.of(new EatFormulaContext(
                 loss,

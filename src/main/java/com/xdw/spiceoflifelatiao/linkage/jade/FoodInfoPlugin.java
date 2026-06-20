@@ -73,7 +73,7 @@ public class FoodInfoPlugin implements IWailaPlugin, IBlockComponentProvider {
                     .getProperties()
                     .stream()
                     .filter(p -> p instanceof IntegerProperty ip && "quality".equals(ip.getName())
-                    ).map(p -> blockTagId.orElse("") + "quality:" + acc.getBlockState().getValue((IntegerProperty) p))
+                    ).map(p -> "quality:" + acc.getBlockState().getValue((IntegerProperty) p))
                     .findFirst();
             return accessor;
         });

@@ -47,7 +47,7 @@ public interface IItemExtensionMixin {
                     return f.get();
                 })
                 .ifPresent(food::set);
-        if (!ConfigCached.EANBLE_CHANGE) return food.get();
+        if (!ConfigCached.ENABLE_CHANGE) return food.get();
         if(EatHistory.recentEntity.isPresent() && !(EatHistory.recentEntity.get() instanceof Player)) return food.get();
         AtomicInteger nutrition = new AtomicInteger(0);
         AtomicReference<Float> saturation = new AtomicReference<>(0F);
