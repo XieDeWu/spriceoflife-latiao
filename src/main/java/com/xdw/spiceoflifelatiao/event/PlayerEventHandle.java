@@ -4,7 +4,7 @@ import com.xdw.spiceoflifelatiao.attachments.ModAttachments;
 import com.xdw.spiceoflifelatiao.attachments.PlayerUnSleepTimeRecord;
 import com.xdw.spiceoflifelatiao.cached.*;
 import com.xdw.spiceoflifelatiao.util.EatFormulaContext;
-import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.core.BlockPos;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.phys.Vec3;
@@ -14,14 +14,24 @@ import net.neoforged.neoforge.event.entity.player.CanPlayerSleepEvent;
 import net.neoforged.neoforge.event.entity.player.PlayerInteractEvent;
 import net.neoforged.neoforge.event.entity.player.PlayerWakeUpEvent;
 
-import java.util.*;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Optional;
+import java.util.UUID;
 import java.util.function.BiConsumer;
-import java.util.function.BinaryOperator;
+import java.util.function.Function;
 
 public class PlayerEventHandle {
     // 玩家动作消耗
     public static final HashMap<UUID, HashMap<String,Map.Entry<Float,Integer>>> playerActionsLoss = new HashMap<>();
+    public static final Function<UUID, BiConsumer<String,Float>> regPlayerAction = uuid
+            -> (name,loss)
+            -> playerActionsLoss.computeIfAbsent(uuid, k -> new HashMap<>())
+            .put(name, Map.entry(loss, 20));
+    // 玩家位置缓存
     public static final HashMap<UUID, Vec3> playerPosCached = new HashMap<>();
+    // 玩家挥手动作登记
+    public static final Map<UUID, Map.Entry<String,Float>> playerSwingRecord = new HashMap<>();
 
     @SubscribeEvent
     public static void tickPlayer(net.neoforged.neoforge.event.tick.PlayerTickEvent.Post event) {
@@ -56,7 +66,7 @@ public class PlayerEventHandle {
                 .map(it -> it.distanceTo(player.position()) > 0.01D)
                 .orElse(true);
         playerPosCached.put(player.getUUID(), player.position());
-        BiConsumer<String,Float> regAction = (name,loss)-> playerActionsLoss.computeIfAbsent(player.getUUID(), k -> new HashMap<>()).put(name, Map.entry(loss, 20));
+        BiConsumer<String,Float> regAction = regPlayerAction.apply(player.getUUID());
         // 移动
         if (posChanged
                 && !player.isCrouching()
@@ -118,42 +128,31 @@ public class PlayerEventHandle {
     // 点击（左键攻击瞬间）
     @SubscribeEvent
     public static void onAttackEntity(AttackEntityEvent event) {
-        Player player = event.getEntity();
-        playerActionsLoss.computeIfAbsent(player.getUUID(), k -> new HashMap<>())
-                .put("click", Map.entry((float) ConfigCached.ACTION_CLICK, 20));
+        playerSwingRecord.put(event.getEntity().getUUID(),Map.entry("click", (float) ConfigCached.ACTION_CLICK));
     }
 
     // 点击(方块)
     @SubscribeEvent
     public static void onLeftClickBlock(PlayerInteractEvent.LeftClickBlock event) {
-        Player player = event.getEntity();
-        playerActionsLoss.computeIfAbsent(player.getUUID(), k -> new HashMap<>())
-                .put("click", Map.entry((float) ConfigCached.ACTION_CLICK, 20));
+        playerSwingRecord.put(event.getEntity().getUUID(),Map.entry("click", (float) ConfigCached.ACTION_CLICK));
     }
 
     // 点击(空挥)
     @SubscribeEvent
     public static void onLeftClickEmpty(PlayerInteractEvent.LeftClickEmpty event) {
-        Player player = event.getEntity();
-        playerActionsLoss.computeIfAbsent(player.getUUID(), k -> new HashMap<>())
-                .put("click", Map.entry((float) ConfigCached.ACTION_CLICK, 20));
+        playerSwingRecord.put(event.getEntity().getUUID(),Map.entry("click", (float) ConfigCached.ACTION_CLICK));
     }
 
 
     // 使用(方块)
     @SubscribeEvent
     public static void onRightClickBlock(PlayerInteractEvent.RightClickBlock event) {
-        Player player = event.getEntity();
-        playerActionsLoss.computeIfAbsent(player.getUUID(), k -> new HashMap<>())
-                .put("use", Map.entry((float) ConfigCached.ACTION_USE, 20));
+        playerSwingRecord.put(event.getEntity().getUUID(),Map.entry("use", (float) ConfigCached.ACTION_USE));
     }
 
     // 使用(物品)
     @SubscribeEvent
     public static void onRightClickItem(PlayerInteractEvent.RightClickItem event) {
-        Player player = event.getEntity();
-        playerActionsLoss.computeIfAbsent(player.getUUID(), k -> new HashMap<>())
-                .put("use", Map.entry((float) ConfigCached.ACTION_USE, 20));
+        playerSwingRecord.put(event.getEntity().getUUID(),Map.entry("use", (float) ConfigCached.ACTION_USE));
     }
-
 }

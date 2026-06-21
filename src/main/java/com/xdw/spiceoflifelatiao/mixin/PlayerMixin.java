@@ -10,9 +10,6 @@ import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
-import java.util.HashMap;
-import java.util.Map;
-
 @Mixin(Player.class)
 public abstract class PlayerMixin implements IPlayerAcessor {
     @Shadow protected abstract float getBlockSpeedFactor();
@@ -26,7 +23,7 @@ public abstract class PlayerMixin implements IPlayerAcessor {
     @Inject(method = "jumpFromGround", at = @At("TAIL"))
     private void onJumpFromGround(CallbackInfo ci) {
         Player player = (Player)(Object)this;
-        PlayerEventHandle.playerActionsLoss.computeIfAbsent(player.getUUID(), k -> new HashMap<>())
-                .put("jump", Map.entry((float) ConfigCached.ACTION_JUMP, 20));
+        PlayerEventHandle.regPlayerAction.apply(player.getUUID())
+                .accept("jump",(float) ConfigCached.ACTION_JUMP);
     }
 }

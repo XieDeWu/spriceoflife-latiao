@@ -8,6 +8,7 @@
     "IItemExtensionMixin",
     "ItemMixin",
     "ItemStackMixin",
+    "LivingEntityMixin",
     "PlayerMixin",
     "StateHolderMixin",
     "linkage.farmersdelight.FeastBlockMixin",
