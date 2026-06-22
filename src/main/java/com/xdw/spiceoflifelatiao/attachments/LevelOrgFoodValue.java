@@ -4,8 +4,10 @@ import com.mojang.logging.LogUtils;
 import com.mojang.serialization.Codec;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
 import com.xdw.spiceoflifelatiao.SpiceOfLifeLatiao;
+import com.xdw.spiceoflifelatiao.cached.LevelCalcCached;
 import com.xdw.spiceoflifelatiao.util.EatFormulaContext;
 import com.xdw.spiceoflifelatiao.util.MurmurHash3;
+import it.unimi.dsi.fastutil.objects.ObjectOpenHashSet;
 import net.minecraft.core.component.DataComponents;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.network.FriendlyByteBuf;
@@ -25,243 +27,330 @@ import java.lang.reflect.Field;
 import java.nio.charset.StandardCharsets;
 import java.util.*;
 import java.util.concurrent.atomic.AtomicReference;
-import java.util.function.Function;
-import java.util.function.Supplier;
-import java.util.stream.IntStream;
-import java.util.stream.Stream;
 
 public final class LevelOrgFoodValue {
-    // 专门标记数据结构的版本
-    public static final int DATA_VERSION = 4;
-    public final Set<Integer> hash = new HashSet<>();
-    public final Map<Integer, Float> hunger = new HashMap<>();
-    public final Map<Integer, Float> saturation = new HashMap<>();
-    public final Map<Integer, Integer> bites = new HashMap<>();
-    public final Map<Integer, Integer> bitesOffset = new HashMap<>();
-    public final Map<Integer, Integer> bitesType = new HashMap<>();
-    public final Map<Integer, Map<ResourceLocation, Integer>> usingConvertsTo = new HashMap<>();
+    public static final int DATA_VERSION = 5;
+    public final Set<Integer> hash = new ObjectOpenHashSet<>(1024);
+    public final Map<Integer, Float> hunger = new HashMap<>(1024);
+    public final Map<Integer, Float> saturation = new HashMap<>(1024);
+    public final Map<Integer, Integer> bites = new HashMap<>(1024);
+    public final Map<Integer, Integer> bitesOffset = new HashMap<>(1024);
+    public final Map<Integer, Integer> bitesType = new HashMap<>(1024);
+    public final Map<Integer, Map<ResourceLocation, Integer>> usingConvertsTo = new HashMap<>(1024);
 
     //食物单片舍入补正
-    public static final HashMap<UUID,Map.Entry<AtomicReference<Float>,AtomicReference<Float>>>
+    public static final HashMap<Integer, Map.Entry<AtomicReference<Float>, AtomicReference<Float>>>
             divRoundErr = HashMap.newHashMap(16);
 
-    public static int getFoodHash(Item item, Integer bite,String id) {
-        String key = SpiceOfLifeLatiao.VERSION
-                + ":" + item.toString().replace(" ", "")
-                + ":" + (bite != null ? bite : "")
-                + ":" + Optional.ofNullable(id).orElse("");
-        return  MurmurHash3.hash32x86(key.getBytes(StandardCharsets.UTF_8));
+    // ★ 结果缓存
+    private static final Map<Integer, Vec3> RESULT_CACHE = new HashMap<>(256);
+    private static long lastClearTime = 0;
+    private static int hashResultCacheKey(int playerId, Item item, String blockTagId,
+                                          int bite, int flag, boolean sliceCalc, long timeSlice) {
+        int h = playerId;
+        h = 31 * h + System.identityHashCode(item);
+        h = 31 * h + (blockTagId != null ? blockTagId.hashCode() : 0);
+        h = 31 * h + bite;
+        h = 31 * h + flag;
+        h = 31 * h + (sliceCalc ? 1 : 0);
+        h = 31 * h + Long.hashCode(timeSlice);
+        return h;
     }
 
-    /**
-     * 获取一个范围的顺位遍历，含自身
-     */
-    public static List<Integer> getEnumScope(int min, int max, int init, boolean forward) {
-        List<Integer> result = new ArrayList<>();
+    // ★ 带内部缓存的 getFoodHash，缓存整个 (item, id) 组的所有哈希
+    private static final Map<Integer,String> cachedRegNames = new HashMap<>(64);
+    public static String getCachedRegName(Item item) {
+        var id = System.identityHashCode(item);
+        var name = cachedRegNames.get(id);
+        if (name == null) {
+            name = item.toString().replace(" ", "");
+            cachedRegNames.put(id, name);
+        }
+        return name;
+    }
+    private record HashCacheEntry(int nullHash, int[] biteHashes) {}
+    private static final Map<Integer, HashCacheEntry> FOOD_HASH_CACHE = new HashMap<>(512);
+    public static int getFoodHash(Item item, Integer bite, String id) {
+        String safeId = id != null ? id : "";
+        var regName = getCachedRegName(item);
+        int key = regName.hashCode() ^ safeId.hashCode();
+        HashCacheEntry entry = FOOD_HASH_CACHE.get(key);
+        if (entry == null) {
+            // 批量计算 null 和 0~15 的哈希
+            String base = SpiceOfLifeLatiao.VERSION + ":" + regName + ":";
+            int nullHash = MurmurHash3.hash32x86((base + ":" + safeId).getBytes(StandardCharsets.UTF_8));
+            int[] hashes = new int[16];
+            for (int b = 0; b < 16; b++) {
+                hashes[b] = MurmurHash3.hash32x86((base + b + ":" + safeId).getBytes(StandardCharsets.UTF_8));
+            }
+            entry = new HashCacheEntry(nullHash, hashes);
+            FOOD_HASH_CACHE.put(key, entry);
+        }
+        return bite == null ? entry.nullHash : entry.biteHashes[bite];
+    }
+
+    /** 返回 int[]，避免 List 装箱 */
+    public static int[] getEnumScope(int min, int max, int init, boolean forward) {
         int size = max - min;
-        if (size <= 0) return result;   // 无效区间，返回空
+        if (size <= 0) return new int[0];
+        int[] result = new int[size];
         int step = forward ? 1 : -1;
         int current = init;
         for (int i = 0; i < size; i++) {
-            result.add(current);
+            result[i] = current;
             current += step;
-            if (current >= max) {
-                current = min;
-            } else if (current < min) {
-                current = max - 1;
-            }
+            if (current >= max) current = min;
+            else if (current < min) current = max - 1;
         }
         return result;
     }
 
-
-    /**
-     * 计算分片数与分片范围
-     */
-    public static Optional<Map.Entry<Integer,List<Integer>>> getAbleBites(@NotNull Player player, @NotNull ItemStack stack, BlockState state, Integer bite
-            , String blockTagId, boolean sliceCalc) {
-        // 玩家未加载,调整食物信息无意义
+    public static Optional<Map.Entry<Integer, int[]>> getAbleBites(@NotNull Player player, @NotNull ItemStack stack,
+                                                                   BlockState state, Integer bite,
+                                                                   String blockTagId, boolean sliceCalc) {
         if (!player.isAddedToLevel() || player.tickCount <= 0) return Optional.empty();
-        // 计算物品分片逻辑以及范围
-        LevelOrgFoodValue data = sliceCalc ? player.level().getData(ModAttachments.LEVEL_ORG_FOOD_VALUE) :
-                new LevelOrgFoodValue();
-        int defHash = LevelOrgFoodValue.getFoodHash(stack.getItem(), null,blockTagId);
-        Optional<Integer> bites = Optional.ofNullable(data.bites.get(defHash));
-        Optional<Integer> bitesOffset = Optional.ofNullable(data.bitesOffset.get(defHash));
-        Optional<Integer> bitesType = Optional.ofNullable(data.bitesType.get(defHash));
-        Optional<Integer> itemFoodBites = bites;
-        bite = bite == null ? (bitesType.isPresent() && bitesType.get() == 1 ? bites.orElse(0) : 0) : bite;
+        LevelOrgFoodValue data = sliceCalc ? player.level().getData(ModAttachments.LEVEL_ORG_FOOD_VALUE)
+                : new LevelOrgFoodValue();
+        int defHash = getFoodHash(stack.getItem(), null, blockTagId);
+        Integer bitesVal = data.bites.get(defHash);
+        Integer offsetVal = data.bitesOffset.get(defHash);
+        Integer typeVal = data.bitesType.get(defHash);
+        int resolvedBite = (bite != null) ? bite : (typeVal != null && typeVal == 1 ? (bitesVal != null ? bitesVal : 0) : 0);
+
+        int finalBites = 1;
+        if (bitesVal != null) finalBites = bitesVal;
         if (sliceCalc && !data.hash.contains(defHash) && stack.getItem() instanceof BlockItem bi) {
             BlockState blockState = state != null ? state : bi.getBlock().defaultBlockState();
-            itemFoodBites = blockState.getValues().keySet().stream().map(comparable -> {
-                if (comparable instanceof IntegerProperty ip && (ip.getName().equals("bites") || ip.getName().equals("servings"))) {
+            for (var entry : blockState.getValues().entrySet()) {
+                if (entry.getKey() instanceof IntegerProperty ip &&
+                        (ip.getName().equals("bites") || ip.getName().equals("servings"))) {
                     try {
                         Field maxField = IntegerProperty.class.getDeclaredField("max");
                         maxField.setAccessible(true);
-                        return (int) maxField.get(ip);
+                        finalBites = (int) maxField.get(ip);
+                        break;
                     } catch (Exception ignored) {}
                 }
-                return -1;
-            }).filter(it -> it > -1).findFirst();
-        }
-        int finalBites = itemFoodBites.orElse(1);
-
-        // 计算bite顺位表
-        var ableBite = bitesType.isPresent() && bitesType.get() == 1
-                ? getEnumScope(1, bite + 1, bite, false)
-                : getEnumScope(bite, Math.max(bite, finalBites + bitesOffset.orElse(0)), bite, true);
-        return Optional.of(Map.entry(finalBites,ableBite));
-    }
-
-    /**
-     * 获取方块食物信息的主方法
-     */
-    public static Vec3 getBlockFoodInfo(@NotNull Player player, @NotNull ItemStack stack, BlockState state,
-                                        Integer bite, String blockTagId, FoodProperties _defaultFoodInfo,
-                                        boolean sliceCalc, int flag) {
-        // 玩家未加载,调整食物信息无意义
-        Optional<FoodProperties> defInfo = Optional.ofNullable(_defaultFoodInfo);
-        if (!player.isAddedToLevel() || player.tickCount <= 0)
-            return defInfo.map(it -> new Vec3(it.nutrition(), it.saturation(), it.eatSeconds()))
-                    .orElse(new Vec3(0, 0, 1.6F));
-
-        // 计算物品分片逻辑以及范围
-        LevelOrgFoodValue data = sliceCalc ? player.level().getData(ModAttachments.LEVEL_ORG_FOOD_VALUE) : new LevelOrgFoodValue();
-        var calcBites = getAbleBites(player, stack, state, bite, blockTagId, sliceCalc).orElse(Map.entry(0,List.of()));
-        var ableBite = calcBites.getValue();
-        var finalBites = calcBites.getKey();
-
-        // 全bite展开 全bite范围补位 按ableBite范围选择性汇总
-        var allBiteHash = IntStream.range(0,16)
-                .mapToObj(it -> LevelOrgFoodValue.getFoodHash(stack.getItem(), it,blockTagId))
-                .toList();
-        var ableBiteHash = ableBite.stream()
-                .map(it -> LevelOrgFoodValue.getFoodHash(stack.getItem(), it,blockTagId))
-                .toList();
-
-        // 按组(bite,convert)扁平化展开
-        var flatBiteInfo = allBiteHash.stream().flatMap(hash -> {
-            Map<ResourceLocation, Integer> converts = data.usingConvertsTo.get(hash);
-            // 无转换时产生一条占位记录，value 为 Optional.empty()
-            // 有转换时正常展开，每条 value 为 Optional.of(物品)
-            if (converts == null || converts.isEmpty()) {
-                return Stream.of(Map.entry(hash, Optional.<ItemStack>empty()));
-            } else {
-                return converts.entrySet().stream().map(it -> {
-                    ItemStack cov = BuiltInRegistries.ITEM.get(it.getKey()).getDefaultInstance();
-                    cov.setCount(it.getValue());
-                    return Map.entry(hash, Optional.of(cov));
-                });
             }
-        }).toList();
+        }
 
-
-        // 初始集 获取bite已记录foodInfo
-        var flat2BiteInfo = flatBiteInfo.stream().map(it->{
-            var hunger_direct = Optional.ofNullable(data.hunger.get(it.getKey()));
-            var saturation_direct = Optional.ofNullable(data.saturation.get(it.getKey()));
-            // defInfo作为direct的补充信息
-            var direct = hunger_direct.flatMap(k->saturation_direct.map(v->new FoodProperties(
-                    Math.round(k),
-                    v,
-                    defInfo.map(FoodProperties::canAlwaysEat).orElse(false),
-                    defInfo.map(FoodProperties::eatSeconds).orElse(1.6F),
-                    defInfo.flatMap(FoodProperties::usingConvertsTo),
-                    defInfo.map(FoodProperties::effects).orElse(List.of())
-            )));
-            // 顺位usingConvertTo食物属性
-            return Map.entry(it,direct.or(()->it.getValue().flatMap(convert-> Optional.ofNullable(convert.get(DataComponents.FOOD))))
-            );
-        }).toList();
-
-        // 补充集 按 bite 保序分组,成组邻居补位
-        var biteGroups = flat2BiteInfo.stream().collect((Supplier<ArrayList<List<Map.Entry<Map.Entry<Integer,
-                Optional<ItemStack>>, Optional<FoodProperties>>>>>) ArrayList::new, (list, e) -> {
-            if (list.isEmpty() || !Objects.equals(e.getKey().getKey(), list.getLast().getFirst().getKey().getKey()))
-                list.add(new ArrayList<>());
-            list.getLast().add(e);
-        }, (l, r) -> {throw new UnsupportedOperationException();});
-        var extSideBiteInfo = IntStream.range(0, biteGroups.size()).mapToObj(idx -> {
-            var group = biteGroups.get(idx);
-            if (group.stream().anyMatch(e -> e.getValue().isPresent())) return group;
-            // 找第一个有信息的邻居组
-            var neighbor = IntStream.range(1, biteGroups.size())
-                    .mapToObj(d -> biteGroups.get((idx + d) % biteGroups.size()))
-                    .filter(g -> g.stream().anyMatch(e -> e.getValue().isPresent()))
-                    .findFirst();
-            return neighbor.map(n -> n.stream().map(ne -> Map.entry(Map.entry(group.getFirst().getKey().getKey(),
-                    ne.getKey().getValue()), ne.getValue())).toList()).orElse(group);
-        }).flatMap(Collection::stream).toList();
-
-        // 补充集 优先使用外部定义 若依然无数据 用其物品形式的食物数据模拟单片来补位
-//        HashMap<UUID,AtomicReference<Float>> tempRoundErr = divRoundErr.computeIfAbsent(player.getUUID(),);
-        var errKV = divRoundErr.computeIfAbsent(player.getUUID(), rr -> Map.entry(new AtomicReference<>(0F),new AtomicReference<>(0F)));
-        var curErr = errKV.getKey();
-        var nextErr = new AtomicReference<>(curErr.get());
-        Function<FoodProperties,FoodProperties> roundCalc = def->{
-            float target = sliceCalc
-                    ? (def.nutrition() + nextErr.get()) / (float) finalBites
-                    : (def.nutrition() + nextErr.get());
-            int real = Math.round(target);
-            nextErr.updateAndGet(v -> v + target - real);
-            return new FoodProperties(
-                    real,
-                    sliceCalc ? def.saturation() / (float) finalBites : def.saturation(),
-                    def.canAlwaysEat(),
-                    def.eatSeconds(),
-                    def.usingConvertsTo(),
-                    def.effects());
-        };
-        var extStackInfo = extSideBiteInfo.stream().map(it -> Map.entry(
-                it.getKey(),
-                defInfo.map(roundCalc)
-                        .or(() -> it.getValue())
-                        .or(() -> Optional.ofNullable(stack.get(DataComponents.FOOD)).map(roundCalc)
-        ))).toList();
-
-        // 套公式
-        var stackOne = stack.copy();
-        stackOne.setCount(1);
-        var calcOutput = extStackInfo.stream()
-                .filter(entry -> ableBiteHash.stream().anyMatch(i -> Objects.equals(i, entry.getKey().getKey())))
-                .flatMap(it -> it.getValue().stream().map(b -> Map.entry(
-                        it.getKey().getValue().orElse(stackOne),b
-                )))
-                .flatMap(a -> EatFormulaContext.from(player, a.getKey(), a.getValue(), flag).stream()
-                        .map(b -> Map.entry(a.getKey().getCount(), b)))
-                .toList();
-
-        // 汇总
-        int sumCount = calcOutput.stream().map(Map.Entry::getKey).reduce(0, Integer::sum);
-        float sumHunger = calcOutput.stream().map(it -> it.getValue().hunger() * it.getKey()).reduce(0F, Float::sum);
-        float sumSaturation = calcOutput.stream().map(it -> it.getValue().saturation() * it.getKey()).reduce(0F, Float::sum);
-        float sumSecond = calcOutput.stream().map(it -> it.getValue().eat_seconds() * it.getKey()).reduce(0F, Float::sum);
-        float roundErr = calcOutput.stream().findFirst().map(Map.Entry::getValue).map(EatFormulaContext::hungerAccRoundErr).orElse(0F);
-        return new Vec3(sumHunger + roundErr, sumSaturation, sumSecond / Math.max(1, sumCount));
+        int maxBite = Math.max(resolvedBite, finalBites + (offsetVal != null ? offsetVal : 0));
+        int[] ableBite = typeVal != null && typeVal == 1
+                ? getEnumScope(1, resolvedBite + 1, resolvedBite, false)
+                : getEnumScope(resolvedBite, maxBite, resolvedBite, true);
+        return Optional.of(Map.entry(finalBites, ableBite));
     }
 
+
+    public static Vec3 getBlockFoodInfo(@NotNull Player player, @NotNull ItemStack stack, BlockState state,
+                                        Integer bite, String blockTagId, FoodProperties def,
+                                        boolean sliceCalc, int flag) {
+        if (!player.isAddedToLevel() || player.tickCount <= 0) {
+            if (def != null) return new Vec3(def.nutrition(), def.saturation(), def.eatSeconds());
+            return new Vec3(0, 0, 1.6F);
+        }
+
+        if (Math.abs(LevelCalcCached.gameTime - lastClearTime) > 600) {
+            lastClearTime = LevelCalcCached.gameTime;
+            RESULT_CACHE.clear();
+        }
+
+        long timeSlice = LevelCalcCached.gameTime / 20;
+        int key = hashResultCacheKey(
+                player.getId(),
+                stack.getItem(),
+                blockTagId,
+                bite != null ? bite : -1,
+                flag,
+                sliceCalc,
+                timeSlice
+        );
+        Vec3 cached = RESULT_CACHE.get(key);
+        if (cached != null) return cached;
+
+        LevelOrgFoodValue data = sliceCalc ? player.level().getData(ModAttachments.LEVEL_ORG_FOOD_VALUE) : new LevelOrgFoodValue();
+        var calcBites = getAbleBites(player, stack, state, bite, blockTagId, sliceCalc)
+                .orElse(Map.entry(0, new int[0]));
+        int[] ableBite = calcBites.getValue();
+        int finalBites = calcBites.getKey();
+        if (ableBite.length == 0 || finalBites <= 0) {
+            Vec3 result = new Vec3(0, 0, 1.6F);
+            RESULT_CACHE.put(key, result);
+            return result;
+        }
+
+        Item item = stack.getItem();
+        int[] allHash = new int[16];
+        for (int b = 0; b < 16; b++) {
+            allHash[b] = getFoodHash(item, b, blockTagId);
+        }
+
+        boolean canAlwaysEat = def != null && def.canAlwaysEat();
+        float eatSeconds = def != null ? def.eatSeconds() : 1.6F;
+        List<FoodProperties.PossibleEffect> effects = def != null ? def.effects() : List.of();
+        Optional<ItemStack> defConvert = def != null ? def.usingConvertsTo() : Optional.empty();
+
+        record BiteData(Float hunger, Float saturation, Map<ResourceLocation, Integer> converts) {}
+        BiteData[] biteDataCache = new BiteData[16];
+        for (int b = 0; b < 16; b++) {
+            int hash = allHash[b];
+            biteDataCache[b] = new BiteData(
+                    data.hunger.get(hash),
+                    data.saturation.get(hash),
+                    data.usingConvertsTo.get(hash)
+            );
+        }
+
+        class BiteEntry {
+            ItemStack convStack;
+            FoodProperties food;
+        }
+
+        // 预先记录每个组是否有有效食物
+        boolean[] groupHasFood = new boolean[16];
+        List<List<BiteEntry>> biteGroups = new ArrayList<>(16);
+        for (int b = 0; b < 16; b++) {
+            BiteData bd = biteDataCache[b];
+            FoodProperties directFood = (bd.hunger != null && bd.saturation != null)
+                    ? new FoodProperties(Math.round(bd.hunger), bd.saturation, canAlwaysEat, eatSeconds, defConvert, effects)
+                    : null;
+
+            List<BiteEntry> group = new ArrayList<>(1);
+            if (bd.converts == null || bd.converts.isEmpty()) {
+                BiteEntry entry = new BiteEntry();
+                entry.food = directFood;
+                group.add(entry);
+                groupHasFood[b] = entry.food != null;
+            } else {
+                for (var convEntry : bd.converts.entrySet()) {
+                    ItemStack conv = BuiltInRegistries.ITEM.get(convEntry.getKey()).getDefaultInstance();
+                    conv.setCount(convEntry.getValue());
+                    BiteEntry entry = new BiteEntry();
+                    entry.convStack = conv;
+                    if (directFood != null) {
+                        entry.food = directFood;
+                    } else {
+                        entry.food = conv.get(DataComponents.FOOD);
+                    }
+                    group.add(entry);
+                    // 任意一个条目有食物即可标记
+                    if (entry.food != null) groupHasFood[b] = true;
+                }
+            }
+            biteGroups.add(group);
+        }
+
+        // ★ 邻居补位，直接使用 groupHasFood 布尔数组
+        for (int b = 0; b < 16; b++) {
+            if (!groupHasFood[b]) {
+                int neighborIdx = -1;
+                for (int d = 1; d < 16; d++) {
+                    int idx = (b + d) % 16;
+                    if (groupHasFood[idx]) {
+                        neighborIdx = idx;
+                        break;
+                    }
+                }
+                if (neighborIdx != -1) {
+                    List<BiteEntry> neighbor = biteGroups.get(neighborIdx);
+                    List<BiteEntry> newGroup = new ArrayList<>(neighbor.size());
+                    for (BiteEntry ne : neighbor) {
+                        BiteEntry newEntry = new BiteEntry();
+                        newEntry.convStack = ne.convStack;
+                        newEntry.food = ne.food;
+                        newGroup.add(newEntry);
+                    }
+                    biteGroups.set(b, newGroup);
+                    groupHasFood[b] = true; // 补位后标记为有食物
+                }
+            }
+        }
+
+        var errKV = divRoundErr.computeIfAbsent(player.getId(),
+                k -> Map.entry(new AtomicReference<>(0f), new AtomicReference<>(0f)));
+        float[] error = new float[]{ errKV.getKey().get() };
+
+        int sumCount = 0;
+        float sumHunger = 0f, sumSaturation = 0f, sumSecond = 0f;
+        float hungerRoundErr = 0f;
+
+        FoodProperties selfFood = stack.get(DataComponents.FOOD);
+
+        for (int b : ableBite) {
+            List<BiteEntry> group = biteGroups.get(b);
+            for (BiteEntry entry : group) {
+                final FoodProperties finalFood;
+                if (def != null) {
+                    finalFood = applyRound(def, sliceCalc, finalBites, error);
+                } else if (entry.food != null) {
+                    finalFood = entry.food;
+                } else {
+                    FoodProperties fallbackFood = entry.convStack != null
+                                    ? entry.convStack.get(DataComponents.FOOD)
+                                    : selfFood;
+                    if (fallbackFood != null) {
+                        finalFood = applyRound(fallbackFood, sliceCalc, finalBites, error);
+                    } else {
+                        continue;
+                    }
+                }
+
+                ItemStack convStack = entry.convStack != null ? entry.convStack : stack;
+                var optResult = EatFormulaContext.from(player, convStack, finalFood, flag);
+                if (optResult.isPresent()) {
+                    var res = optResult.get();
+                    int count = convStack.getCount();
+                    sumCount += count;
+                    sumHunger += res.hunger() * count;
+                    sumSaturation += res.saturation() * count;
+                    sumSecond += res.eat_seconds() * count;
+                    if (hungerRoundErr == 0f) hungerRoundErr = res.hungerAccRoundErr();
+                }
+            }
+        }
+
+        errKV.getValue().set(error[0]);
+        Vec3 result = new Vec3(sumHunger + hungerRoundErr, sumSaturation, sumSecond / Math.max(1, sumCount));
+        RESULT_CACHE.put(key, result);
+        return result;
+    }
+
+    private static FoodProperties applyRound(FoodProperties base, boolean sliceCalc, int finalBites, float[] roundErr) {
+        float target = sliceCalc
+                ? (base.nutrition() + roundErr[0]) / (float) finalBites
+                : (base.nutrition() + roundErr[0]);
+        int real = Math.round(target);
+        roundErr[0] += target - real;
+        return new FoodProperties(
+                real,
+                sliceCalc ? base.saturation() / (float) finalBites : base.saturation(),
+                base.canAlwaysEat(),
+                base.eatSeconds(),
+                base.usingConvertsTo(),
+                base.effects()
+        );
+    }
+
+    // ==================== Codec / StreamCodec 保持不变 ====================
     static final class CustomCodec {
-
         public static <K, V> Codec<Map<K, V>> mapAsList(Codec<K> keyCodec, Codec<V> valueCodec) {
-            Codec<Map.Entry<K, V>> entryCodec = RecordCodecBuilder.create(inst -> inst.group(keyCodec.fieldOf("k").forGetter(Map.Entry::getKey), valueCodec.fieldOf("v").forGetter(Map.Entry::getValue)).apply(inst, Map::entry));
-
+            Codec<Map.Entry<K, V>> entryCodec = RecordCodecBuilder.create(inst -> inst.group(
+                    keyCodec.fieldOf("k").forGetter(Map.Entry::getKey),
+                    valueCodec.fieldOf("v").forGetter(Map.Entry::getValue)
+            ).apply(inst, Map::entry));
             return Codec.list(entryCodec).xmap(list -> {
                 Map<K, V> map = new HashMap<>();
                 for (var e : list) map.put(e.getKey(), e.getValue());
                 return map;
             }, map -> map.entrySet().stream().toList());
         }
-
-        static final Codec<Map<Integer, Float>> INT_FLOAT_MAP = CustomCodec.mapAsList(Codec.INT, Codec.FLOAT);
-
-        static final Codec<Map<Integer, Integer>> INT_INT_MAP = CustomCodec.mapAsList(Codec.INT, Codec.INT);
-        static final Codec<Map<Integer, ResourceLocation>> INT_RL_MAP = CustomCodec.mapAsList(Codec.INT, ResourceLocation.CODEC);
+        static final Codec<Map<Integer, Float>> INT_FLOAT_MAP = mapAsList(Codec.INT, Codec.FLOAT);
+        static final Codec<Map<Integer, Integer>> INT_INT_MAP = mapAsList(Codec.INT, Codec.INT);
+        static final Codec<Map<Integer, ResourceLocation>> INT_RL_MAP = mapAsList(Codec.INT, ResourceLocation.CODEC);
         static final Codec<Map<ResourceLocation, Integer>> RL_INT_MAP = mapAsList(ResourceLocation.CODEC, Codec.INT);
         static final Codec<Map<Integer, Map<ResourceLocation, Integer>>> INT_RL_INT_MAP = mapAsList(Codec.INT, RL_INT_MAP);
     }
 
-
-    // ===== Codec（存档） =====
     public static final Codec<LevelOrgFoodValue> CODEC = RecordCodecBuilder.create(i -> i.group(
             Codec.INT.optionalFieldOf("dataVersion", 0).forGetter(v -> DATA_VERSION),
             Codec.INT.listOf().fieldOf("hash").forGetter(v -> v.hash.stream().toList()),
@@ -271,10 +360,9 @@ public final class LevelOrgFoodValue {
             CustomCodec.INT_INT_MAP.fieldOf("bitesOffset").forGetter(v -> v.bitesOffset),
             CustomCodec.INT_INT_MAP.fieldOf("bitesType").forGetter(v -> v.bitesType),
             CustomCodec.INT_RL_INT_MAP.fieldOf("usingConvertsTo").forGetter(v -> v.usingConvertsTo)
-    ).apply(i, (version,a, b, c, d, f, g,h) -> {
+    ).apply(i, (version, a, b, c, d, f, g, h) -> {
         if (version != DATA_VERSION) {
-            // 版本不匹配 → 直接返回全新空对象，旧数据全部丢弃
-            LogUtils.getLogger().warn("The data storage format of SpiceOfLifeLatiao-v{} has been changed. The old world block food records have been emptied.",SpiceOfLifeLatiao.VERSION);
+            LogUtils.getLogger().warn("The data storage format of SpiceOfLifeLatiao-v{} has been changed. The old world block food records have been emptied.", SpiceOfLifeLatiao.VERSION);
             return new LevelOrgFoodValue();
         }
         LevelOrgFoodValue v = new LevelOrgFoodValue();
@@ -288,41 +376,19 @@ public final class LevelOrgFoodValue {
         return v;
     }));
 
-    // ===== StreamCodec（网络同步） =====
     public static final StreamCodec<FriendlyByteBuf, LevelOrgFoodValue> STREAM_CODEC = StreamCodec.of((b, v) -> {
         b.writeVarInt(v.hash.size());
         v.hash.forEach(b::writeVarInt);
-
         b.writeVarInt(v.hunger.size());
-        v.hunger.forEach((k, f) -> {
-            b.writeVarInt(k);
-            b.writeFloat(f);
-        });
-
+        v.hunger.forEach((k, val) -> { b.writeVarInt(k); b.writeFloat(val); });
         b.writeVarInt(v.saturation.size());
-        v.saturation.forEach((k, f) -> {
-            b.writeVarInt(k);
-            b.writeFloat(f);
-        });
-
+        v.saturation.forEach((k, val) -> { b.writeVarInt(k); b.writeFloat(val); });
         b.writeVarInt(v.bites.size());
-        v.bites.forEach((k, f) -> {
-            b.writeVarInt(k);
-            b.writeInt(f);
-        });
-
+        v.bites.forEach((k, val) -> { b.writeVarInt(k); b.writeInt(val); });
         b.writeVarInt(v.bitesOffset.size());
-        v.bitesOffset.forEach((k, f) -> {
-            b.writeVarInt(k);
-            b.writeInt(f);
-        });
-
+        v.bitesOffset.forEach((k, val) -> { b.writeVarInt(k); b.writeInt(val); });
         b.writeVarInt(v.bitesType.size());
-        v.bitesType.forEach((k, f) -> {
-            b.writeVarInt(k);
-            b.writeInt(f);
-        });
-
+        v.bitesType.forEach((k, val) -> { b.writeVarInt(k); b.writeInt(val); });
         b.writeVarInt(v.usingConvertsTo.size());
         v.usingConvertsTo.forEach((k, map) -> {
             b.writeVarInt(k);
@@ -334,38 +400,20 @@ public final class LevelOrgFoodValue {
         });
     }, b -> {
         LevelOrgFoodValue v = new LevelOrgFoodValue();
-
-        for (int i = b.readVarInt(); i-- > 0; )
-            v.hash.add(b.readVarInt());
-
-        for (int i = b.readVarInt(); i-- > 0; )
-            v.hunger.put(b.readVarInt(), b.readFloat());
-
-        for (int i = b.readVarInt(); i-- > 0; )
-            v.saturation.put(b.readVarInt(), b.readFloat());
-
-        for (int i = b.readVarInt(); i-- > 0; )
-            v.bites.put(b.readVarInt(), b.readInt());
-
-        for (int i = b.readVarInt(); i-- > 0; )
-            v.bitesOffset.put(b.readVarInt(), b.readInt());
-
-        for (int i = b.readVarInt(); i-- > 0; )
-            v.bitesType.put(b.readVarInt(), b.readInt());
-
+        for (int i = b.readVarInt(); i-- > 0; ) v.hash.add(b.readVarInt());
+        for (int i = b.readVarInt(); i-- > 0; ) v.hunger.put(b.readVarInt(), b.readFloat());
+        for (int i = b.readVarInt(); i-- > 0; ) v.saturation.put(b.readVarInt(), b.readFloat());
+        for (int i = b.readVarInt(); i-- > 0; ) v.bites.put(b.readVarInt(), b.readInt());
+        for (int i = b.readVarInt(); i-- > 0; ) v.bitesOffset.put(b.readVarInt(), b.readInt());
+        for (int i = b.readVarInt(); i-- > 0; ) v.bitesType.put(b.readVarInt(), b.readInt());
         for (int i = b.readVarInt(); i-- > 0; ) {
             int key = b.readVarInt();
             int size = b.readVarInt();
             Map<ResourceLocation, Integer> map = new HashMap<>();
-            for (int j = 0; j < size; j++) {
-                ResourceLocation rl = ResourceLocation.STREAM_CODEC.decode(b);
-                int count = b.readVarInt();
-                map.put(rl, count);
-            }
+            for (int j = 0; j < size; j++)
+                map.put(ResourceLocation.STREAM_CODEC.decode(b), b.readVarInt());
             v.usingConvertsTo.put(key, map);
         }
-
         return v;
     });
-
 }

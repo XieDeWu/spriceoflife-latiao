@@ -4,7 +4,6 @@ import com.xdw.spiceoflifelatiao.attachments.ModAttachments;
 import com.xdw.spiceoflifelatiao.attachments.PlayerUnSleepTimeRecord;
 import com.xdw.spiceoflifelatiao.cached.*;
 import com.xdw.spiceoflifelatiao.util.EatFormulaContext;
-import net.minecraft.core.BlockPos;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.phys.Vec3;
@@ -14,19 +13,17 @@ import net.neoforged.neoforge.event.entity.player.CanPlayerSleepEvent;
 import net.neoforged.neoforge.event.entity.player.PlayerInteractEvent;
 import net.neoforged.neoforge.event.entity.player.PlayerWakeUpEvent;
 
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Optional;
-import java.util.UUID;
+import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.BiConsumer;
 import java.util.function.Function;
 
 public class PlayerEventHandle {
     // 玩家动作消耗
-    public static final HashMap<UUID, HashMap<String,Map.Entry<Float,Integer>>> playerActionsLoss = new HashMap<>();
+    public static final Map<UUID, Map<String,Map.Entry<Float,Integer>>> playerActionsLoss = new ConcurrentHashMap<>();
     public static final Function<UUID, BiConsumer<String,Float>> regPlayerAction = uuid
             -> (name,loss)
-            -> playerActionsLoss.computeIfAbsent(uuid, k -> new HashMap<>())
+            -> playerActionsLoss.computeIfAbsent(uuid, k -> new ConcurrentHashMap<>())
             .put(name, Map.entry(loss, 20));
     // 玩家位置缓存
     public static final HashMap<UUID, Vec3> playerPosCached = new HashMap<>();
@@ -88,13 +85,23 @@ public class PlayerEventHandle {
         if(posChanged && player.isFallFlying() && !player.onGround()) regAction.accept("flying", (float) ConfigCached.ACTION_FLYING);
 
         // 结算疲劳 数据来源取决于对playerActionsLoss的填充方
-        var actions = playerActionsLoss.computeIfAbsent(player.getUUID(),it->new HashMap<>());
-        var actionsLoss = actions.values().stream()
-                .filter(it->it.getValue() > 0)
-                .map(Map.Entry::getKey)
-                .reduce(0F, Float::sum);
-        actions.entrySet().removeIf(entry -> entry.getValue().getValue() <= 0);
-        actions.replaceAll((action, entry) -> Map.entry(entry.getKey(), entry.getValue() - 1));
+        var actions = playerActionsLoss.computeIfAbsent(player.getUUID(), it -> new HashMap<>());
+        float actionsLoss = 0F;
+        Iterator<Map.Entry<String, Map.Entry<Float, Integer>>> iter = actions.entrySet().iterator();
+        while (iter.hasNext()) {
+            var entry = iter.next();
+            var value = entry.getValue();
+            if (value != null) {
+                if (value.getValue() > 0) {
+                    actionsLoss += value.getKey();
+                }
+                if (value.getValue() <= 0) {
+                    iter.remove();
+                    continue;
+                }
+                entry.setValue(Map.entry(value.getKey(), value.getValue() - 1));
+            }
+        }
         if(ConfigCached.ENABLE_ACTIONS_LOSS) player.causeFoodExhaustion(actionsLoss);
     }
 

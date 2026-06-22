@@ -1,6 +1,7 @@
 package com.xdw.spiceoflifelatiao.cached;
 
 import com.xdw.spiceoflifelatiao.Config;
+import com.xdw.spiceoflifelatiao.util.EatFormulaContext;
 import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.config.ModConfig;
 import net.neoforged.fml.event.config.ModConfigEvent;
@@ -104,5 +105,7 @@ public final class ConfigCached {
         ACTION_USE    = Config.ACTION_USE   .get();
         ACTION_FLYING = Config.ACTION_FLYING.get();
         CONFIG_VERSION_FLAG = Config.CONFIG_VERSION_FLAG.get();
+
+        EatFormulaContext.clearFormulaCached();
     }
 }

@@ -8,18 +8,8 @@ public class FifoHashMap<K, V> extends LinkedHashMap<K, V> {
     private final int maxSize;
 
     public FifoHashMap(int maxSize) {
-        super(maxSize + 1, 0.75f, false);
+        super(maxSize, 0.75f, false);
         this.maxSize = maxSize;
-    }
-
-    @Override
-    public synchronized V put(K key, V value) {
-        return super.put(key, value);
-    }
-
-    @Override
-    public synchronized V get(Object key) {
-        return super.get(key);
     }
 
     @Override

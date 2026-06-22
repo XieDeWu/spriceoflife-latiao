@@ -72,7 +72,7 @@ public class Config {
 
     public static final ModConfigSpec.ConfigValue<List<? extends String>> LOSS = BUILDER
             .comment("默认：固定系数、饥饿程度、短期营养、短期摄入、过饱和、方块速度系数、玩家状态、玩家睡眠中、亮度、湿漉、盔甲值、玩家未睡眠时长")
-            .defineListAllowEmpty("LOSS", List.of("0.004",
+            .defineListAllowEmpty("LOSS", List.of("0.006",
                     "*2^(HUNGER_LEVEL/20-1)",
                     "*0.5^(SUM_SATURATION_SHORT/max(SUM_HUNGER_SHORT,1)-1)",
                     "*2^((SUM_SATURATION_SHORT+SUM_HUNGER_SHORT)/128 -1)",
@@ -130,7 +130,7 @@ public class Config {
     static { BUILDER.pop(); }
 
     // 用于配置项重置
-    public static final int current_config_version = 143;
+    public static final int current_config_version = 144;
     public static final ModConfigSpec.ConfigValue<Integer> CONFIG_VERSION_FLAG = BUILDER
             .comment("请勿变更,用于照顾萌新,刷新旧配置,当前值与新版本默认值不一致时触发,手动变更,也会触发重置行为")
             .define("CONFIG_VERSION_FLAG",-1);

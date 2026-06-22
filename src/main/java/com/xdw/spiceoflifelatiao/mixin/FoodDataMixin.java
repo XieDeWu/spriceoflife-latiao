@@ -80,7 +80,7 @@ public abstract class FoodDataMixin implements IEatHistoryAcessor {
                     (int) LevelCalcCached.gameTime
             )).ifPresent(it->{
                 var biteErrNext = FoodDataCached.player.stream()
-                        .flatMap(player -> Optional.ofNullable(LevelOrgFoodValue.divRoundErr.get(player.getUUID())).stream())
+                        .flatMap(player -> Optional.ofNullable(LevelOrgFoodValue.divRoundErr.get(player.getId())).stream())
                         .map(a -> a.getValue().get())
                         .findFirst()
                         .orElse(0F);
@@ -89,7 +89,7 @@ public abstract class FoodDataMixin implements IEatHistoryAcessor {
                 hunger.set((int) Math.round(addHunger));
                 saturation.set((float) addSaturation);
                 var err = (float) (addHunger - hunger.get());
-                FoodDataCached.player.map(player -> LevelOrgFoodValue.divRoundErr.put(player.getUUID(),Map.entry(new AtomicReference<>(err), new AtomicReference<>(0F))));
+                FoodDataCached.player.map(player -> LevelOrgFoodValue.divRoundErr.put(player.getId(),Map.entry(new AtomicReference<>(err), new AtomicReference<>(0F))));
                 FoodDataCached.realHunger = Optional.of(hunger.get());
                 FoodDataCached.realSaturation = Optional.of(saturation.get());
                 FoodDataCached.hungerRoundErr = Optional.of(err);
