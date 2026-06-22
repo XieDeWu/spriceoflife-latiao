@@ -130,9 +130,10 @@ public class Config {
     static { BUILDER.pop(); }
 
     // 用于配置项重置
+    public static final int current_config_version = 143;
     public static final ModConfigSpec.ConfigValue<Integer> CONFIG_VERSION_FLAG = BUILDER
             .comment("请勿变更,用于照顾萌新,刷新旧配置,当前值与新版本默认值不一致时触发,手动变更,也会触发重置行为")
-            .define("CONFIG_VERSION_FLAG",142);
+            .define("CONFIG_VERSION_FLAG",-1);
     public static final List<ModConfigSpec.ConfigValue<?>> CONFIG_VALUES = List.of(
             Config.ENABLE_CHANGE,
             Config.ENABLE_LOSS,

@@ -50,12 +50,14 @@ public final class ConfigCached {
 
     private static void update(){
         // 检查配置版本 当前值与默认值不一致时 重置为默认值
-        if(!Config.CONFIG_VERSION_FLAG.get().equals(Config.CONFIG_VERSION_FLAG.getDefault())){
+        if(!Config.CONFIG_VERSION_FLAG.get().equals(Config.current_config_version)){
             Config.CONFIG_VALUES.forEach(entry -> {
                 @SuppressWarnings("unchecked")
                 ModConfigSpec.ConfigValue<Object> value = (ModConfigSpec.ConfigValue<Object>) entry;
                 value.set(value.getDefault());
             });
+            // 对于版本标识符 则另外重置
+            Config.CONFIG_VERSION_FLAG.set(Config.current_config_version);
         }
 
         // 同步服务器配置并缓存
