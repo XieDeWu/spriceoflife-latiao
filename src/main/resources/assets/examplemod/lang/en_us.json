@@ -20,5 +20,6 @@
   "spiceoflifelatiao.configuration.ACTION_CLIMB": "ACTION_CLIMB",
   "spiceoflifelatiao.configuration.ACTION_CLICK": "ACTION_CLICK",
   "spiceoflifelatiao.configuration.ACTION_USE": "ACTION_USE",
-  "spiceoflifelatiao.configuration.ACTION_FLYING": "ACTION_FLYING"
+  "spiceoflifelatiao.configuration.ACTION_FLYING": "ACTION_FLYING",
+  "spiceoflifelatiao.configuration.CONFIG_VERSION_FLAG": "CONFIG_VERSION_FLAG"
 }

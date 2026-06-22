@@ -4,6 +4,7 @@ import com.xdw.spiceoflifelatiao.Config;
 import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.config.ModConfig;
 import net.neoforged.fml.event.config.ModConfigEvent;
+import net.neoforged.neoforge.common.ModConfigSpec;
 
 import java.util.HashMap;
 import java.util.List;
@@ -31,6 +32,7 @@ public final class ConfigCached {
     public static double ACTION_CLICK  = 0D;
     public static double ACTION_USE    = 0D;
     public static double ACTION_FLYING = 0D;
+    public static int CONFIG_VERSION_FLAG = -1;
 
     @SubscribeEvent
     public static void onConfigLoaded(ModConfigEvent.Loading event) {
@@ -45,8 +47,19 @@ public final class ConfigCached {
             update();
         }
     }
+
     private static void update(){
-        ENABLE_CHANGE = Config.EANBLE_CHANGE.get();
+        // 检查配置版本 当前值与默认值不一致时 重置为默认值
+        if(!Config.CONFIG_VERSION_FLAG.get().equals(Config.CONFIG_VERSION_FLAG.getDefault())){
+            Config.CONFIG_VALUES.forEach(entry -> {
+                @SuppressWarnings("unchecked")
+                ModConfigSpec.ConfigValue<Object> value = (ModConfigSpec.ConfigValue<Object>) entry;
+                value.set(value.getDefault());
+            });
+        }
+
+        // 同步服务器配置并缓存
+        ENABLE_CHANGE = Config.ENABLE_CHANGE.get();
         ENABLE_LOSS = Config.ENABLE_LOSS.get();
         ENABLE_HUNGER = Config.ENABLE_HUNGER.get();
         ENABLE_SATURATION = Config.ENABLE_SATURATION.get();
@@ -88,5 +101,6 @@ public final class ConfigCached {
         ACTION_CLICK  = Config.ACTION_CLICK .get();
         ACTION_USE    = Config.ACTION_USE   .get();
         ACTION_FLYING = Config.ACTION_FLYING.get();
+        CONFIG_VERSION_FLAG = Config.CONFIG_VERSION_FLAG.get();
     }
 }

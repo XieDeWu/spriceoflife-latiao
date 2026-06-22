@@ -20,5 +20,7 @@
   "spiceoflifelatiao.configuration.ACTION_CLIMB": "攀爬",
   "spiceoflifelatiao.configuration.ACTION_CLICK": "点击",
   "spiceoflifelatiao.configuration.ACTION_USE": "使用",
-  "spiceoflifelatiao.configuration.ACTION_FLYING": "飞行"
+  "spiceoflifelatiao.configuration.ACTION_FLYING": "飞行",
+  "spiceoflifelatiao.configuration.CONFIG_VERSION_FLAG": "配置版本标识符"
+
 }

@@ -9,7 +9,7 @@ import java.util.List;
 public class Config {
     private static final ModConfigSpec.Builder BUILDER = new ModConfigSpec.Builder();
 
-    public static final ModConfigSpec.ConfigValue<Boolean> EANBLE_CHANGE = BUILDER
+    public static final ModConfigSpec.ConfigValue<Boolean> ENABLE_CHANGE = BUILDER
             .comment("公式上下文与计算顺序如下，仅支持向前引用，时间单位为秒或游戏刻")
             .comment("默认数值均为0.0，计算异常默认使用原版方法运行")
             .comment("HUNGER_LEVEL 玩家饱食度")
@@ -71,20 +71,20 @@ public class Config {
             .defineInRange("historyLengthShort", 16, 0, 65535);
 
     public static final ModConfigSpec.ConfigValue<List<? extends String>> LOSS = BUILDER
-            .comment("默认：固定系数、饥饿程度、短期营养、短期摄入、过饱和、盔甲值、亮度、湿漉、方块速度系数、玩家状态、玩家睡眠中、玩家未睡眠时长")
-            .defineListAllowEmpty("LOSS", List.of("0.006",
+            .comment("默认：固定系数、饥饿程度、短期营养、短期摄入、过饱和、方块速度系数、玩家状态、玩家睡眠中、亮度、湿漉、盔甲值、玩家未睡眠时长")
+            .defineListAllowEmpty("LOSS", List.of("0.004",
                     "*2^(HUNGER_LEVEL/20-1)",
                     "*0.5^(SUM_SATURATION_SHORT/max(SUM_HUNGER_SHORT,1)-1)",
                     "*2^((SUM_SATURATION_SHORT+SUM_HUNGER_SHORT)/128 -1)",
                     "*(1+2^(SATURATION_LEVEL/4-4)-0.0625)",
-                    "*(1+(min(ARMOR,20)/20)^2.41+log(max(20,ARMOR))/log(20)-1)",
-                    "*(1.5-0.5*LIGHT/15)",
-                    "*(1+0.5*(IS_WET+RAIN_LEVEL+THUNDER_LEVEL))",
                     "*(2-BLOCK_SPEED_FACTOR)",
                     "*0.8^PLAYER_BUFF",
                     "*1.5^PLAYER_DEBUFF",
                     "*(1+0.1*PLAYER_ZZZ)",
-                    "*(2-3/(3+PLAYER_UN_SLEEPTIME/12000))"
+                    "+0.004*(0.3-0.5*LIGHT/15)",
+                    "+0.004*0.5*(IS_WET+RAIN_LEVEL+THUNDER_LEVEL)",
+                    "+0.004*0.5*((min(ARMOR,20)/20)^2.41+log(max(20,ARMOR))/log(20)-1)",
+                    "+0.004*(1-3/(3+PLAYER_UN_SLEEPTIME/12000))"
             ),()->"",it->it instanceof String);
 
     public static final ModConfigSpec.ConfigValue<List<? extends String>> HUNGER = BUILDER
@@ -119,17 +119,46 @@ public class Config {
                     "minecraft:enchanted_golden_apple"
             ),()->"minecraft:apple",it->it instanceof String);
 
-
     static { BUILDER.push("ACTIONS_LOSS"); }
     public static final ModConfigSpec.ConfigValue<Double> ACTION_MOVE   = BUILDER.defineInRange("ACTION_MOVE"   , 0.003D,0D,1D);
-    public static final ModConfigSpec.ConfigValue<Double> ACTION_JUMP   = BUILDER.defineInRange("ACTION_JUMP"   , 0.015D,0D,1D);
-    public static final ModConfigSpec.ConfigValue<Double> ACTION_SWIM   = BUILDER.defineInRange("ACTION_SWIM"   , 0.015D,0D,1D);
-    public static final ModConfigSpec.ConfigValue<Double> ACTION_CLIMB  = BUILDER.defineInRange("ACTION_CLIMB"  , 0.015D,0D,1D);
+    public static final ModConfigSpec.ConfigValue<Double> ACTION_JUMP   = BUILDER.defineInRange("ACTION_JUMP"   , 0.006D,0D,1D);
+    public static final ModConfigSpec.ConfigValue<Double> ACTION_SWIM   = BUILDER.defineInRange("ACTION_SWIM"   , 0.025D,0D,1D);
+    public static final ModConfigSpec.ConfigValue<Double> ACTION_CLIMB  = BUILDER.defineInRange("ACTION_CLIMB"  , 0.020D,0D,1D);
     public static final ModConfigSpec.ConfigValue<Double> ACTION_CLICK  = BUILDER.defineInRange("ACTION_CLICK"  , 0.015D,0D,1D);
     public static final ModConfigSpec.ConfigValue<Double> ACTION_USE    = BUILDER.defineInRange("ACTION_USE"    , 0.015D,0D,1D);
     public static final ModConfigSpec.ConfigValue<Double> ACTION_FLYING  = BUILDER.defineInRange("ACTION_FLYING", 0.045D,0D,1D);
     static { BUILDER.pop(); }
 
-    static final ModConfigSpec SPEC = BUILDER.build();
+    // 用于配置项重置
+    public static final ModConfigSpec.ConfigValue<Integer> CONFIG_VERSION_FLAG = BUILDER
+            .comment("请勿变更,用于照顾萌新,刷新旧配置,当前值与新版本默认值不一致时触发,手动变更,也会触发重置行为")
+            .define("CONFIG_VERSION_FLAG",142);
+    public static final List<ModConfigSpec.ConfigValue<?>> CONFIG_VALUES = List.of(
+            Config.ENABLE_CHANGE,
+            Config.ENABLE_LOSS,
+            Config.ENABLE_HUNGER,
+            Config.ENABLE_SATURATION,
+            Config.ENABLE_EAT_SECONDS,
+            Config.ENABLE_ACTIONS_LOSS,
 
+            Config.HISTORY_LENGTH_LONG,
+            Config.HISTORY_LENGTH_SHORT,
+
+            Config.ACTION_MOVE,
+            Config.ACTION_JUMP,
+            Config.ACTION_SWIM,
+            Config.ACTION_CLIMB,
+            Config.ACTION_CLICK,
+            Config.ACTION_USE,
+            Config.ACTION_FLYING,
+
+            Config.LOSS,
+            Config.HUNGER,
+            Config.SATURATION,
+            Config.EAT_SECONDS,
+            Config.BLACK_FOOD,
+
+            Config.CONFIG_VERSION_FLAG
+    );
+    public static final ModConfigSpec SPEC = BUILDER.build();
 }
