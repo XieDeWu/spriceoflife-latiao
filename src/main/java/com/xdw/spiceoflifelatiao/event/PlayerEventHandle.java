@@ -26,9 +26,9 @@ public class PlayerEventHandle {
             -> playerActionsLoss.computeIfAbsent(uuid, k -> new ConcurrentHashMap<>())
             .put(name, Map.entry(loss, 20));
     // 玩家位置缓存
-    public static final HashMap<UUID, Vec3> playerPosCached = new HashMap<>();
+    public static final Map<UUID, Vec3> playerPosCached = new ConcurrentHashMap<>();
     // 玩家挥手动作登记
-    public static final Map<UUID, Map.Entry<String,Float>> playerSwingRecord = new HashMap<>();
+    public static final Map<UUID, Map.Entry<String,Float>> playerSwingRecord = new ConcurrentHashMap<>();
 
     @SubscribeEvent
     public static void tickPlayer(net.neoforged.neoforge.event.tick.PlayerTickEvent.Post event) {
@@ -85,24 +85,22 @@ public class PlayerEventHandle {
         if(posChanged && player.isFallFlying() && !player.onGround()) regAction.accept("flying", (float) ConfigCached.ACTION_FLYING);
 
         // 结算疲劳 数据来源取决于对playerActionsLoss的填充方
-        var actions = playerActionsLoss.computeIfAbsent(player.getUUID(), it -> new HashMap<>());
-        float actionsLoss = 0F;
-        Iterator<Map.Entry<String, Map.Entry<Float, Integer>>> iter = actions.entrySet().iterator();
-        while (iter.hasNext()) {
-            var entry = iter.next();
-            var value = entry.getValue();
-            if (value != null) {
-                if (value.getValue() > 0) {
-                    actionsLoss += value.getKey();
-                }
-                if (value.getValue() <= 0) {
-                    iter.remove();
-                    continue;
-                }
-                entry.setValue(Map.entry(value.getKey(), value.getValue() - 1));
+        var actions = playerActionsLoss.computeIfAbsent(player.getUUID(), k -> new ConcurrentHashMap<>());
+        float[] actionsLoss = {0f};
+        for (var action : actions.entrySet()) {
+            var actionValue = action.getValue();
+            if (actionValue == null) continue;
+            int tick = actionValue.getValue();
+            if (tick > 0) {
+                actionsLoss[0] += actionValue.getKey();
+                actions.put(action.getKey(), Map.entry(actionValue.getKey(), tick - 1));
             }
         }
-        if(ConfigCached.ENABLE_ACTIONS_LOSS) player.causeFoodExhaustion(actionsLoss);
+        actions.entrySet().removeIf(entry -> {
+            var value = entry.getValue();
+            return value == null || value.getValue() <= 0;
+        });
+        if(ConfigCached.ENABLE_ACTIONS_LOSS) player.causeFoodExhaustion(actionsLoss[0]);
     }
 
 
