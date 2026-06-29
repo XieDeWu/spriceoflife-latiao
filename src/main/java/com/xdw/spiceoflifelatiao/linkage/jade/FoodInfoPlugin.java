@@ -146,7 +146,7 @@ public class FoodInfoPlugin implements IWailaPlugin, IBlockComponentProvider {
                             || data.saturation.get(a) != null
                             || data.usingConvertsTo.get(a) != null
                     ).count();
-            if(bites > 0 && samples < bites){
+            if(bites > 0 && samples > 0 && samples < bites){
                 hud_tips.add(ElementHelper.INSTANCE.text(Component.literal(
                         String.format("食物信息采集进度(%d/%d)",samples,bites)
                 ).withStyle(ChatFormatting.RED)));
