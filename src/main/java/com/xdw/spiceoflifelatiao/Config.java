@@ -75,7 +75,7 @@ public class Config {
             .defineListAllowEmpty("LOSS", List.of("0.006",
                     "*2^(HUNGER_LEVEL/20-1)",
                     "*0.5^(SUM_SATURATION_SHORT/max(SUM_HUNGER_SHORT,1)-1)",
-                    "*2^((SUM_SATURATION_SHORT+SUM_HUNGER_SHORT)/128 -1)",
+                    "*2^(min(4,(SUM_SATURATION_SHORT+SUM_HUNGER_SHORT)/128) -1)",
                     "*(1+2^(SATURATION_LEVEL/4-4)-0.0625)",
                     "*(2-BLOCK_SPEED_FACTOR)",
                     "*0.8^PLAYER_BUFF",
@@ -130,7 +130,7 @@ public class Config {
     static { BUILDER.pop(); }
 
     // 用于配置项重置
-    public static final int current_config_version = 144;
+    public static final int current_config_version = 147;
     public static final ModConfigSpec.ConfigValue<Integer> CONFIG_VERSION_FLAG = BUILDER
             .comment("请勿变更,用于照顾萌新,刷新旧配置,当前值与新版本默认值不一致时触发,手动变更,也会触发重置行为")
             .define("CONFIG_VERSION_FLAG",-1);
