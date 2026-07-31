@@ -136,7 +136,7 @@ public class FoodInfoPlugin implements IWailaPlugin, IBlockComponentProvider {
         });
         if (Minecraft.getInstance().getResourceManager().getResource(RES_APPLESKIN).isPresent()) hud2.count();
         hud_saturation = needRevSaturation.get() ? tempHudSaturation.reversed() : tempHudSaturation;
-        if (isBlockFood) {
+        if (Math.round(blockFoodInfo.x) > 0 && isBlockFood) {
             var data = player.get().level().getData(ModAttachments.LEVEL_ORG_FOOD_VALUE);
             int bites = LevelOrgFoodValue.getAbleBites(player.get(),stack.get(), blockAccessor.getBlockState(),bite.orElse(0),blockTagId.orElse(null),true)
                     .map(Map.Entry::getKey).orElse(0);
